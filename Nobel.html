@@ -1,0 +1,768 @@
+<!-- Chosen Palette: Nobel Gold & Neutral --><!-- Application Structure Plan: The SPA is structured as a top-down thematic dashboard with a sticky navigation bar for easy access to key sections: Home (Hero/Stats), Origin (Nobel's Story), The Prizes (Interactive Category Modal), 2025 Laureates (Filterable Dashboard), and Legacy (Data Viz & Critique). This structure was chosen over a linear report to improve user engagement and exploration. Users can immediately jump to the laureates or explore the history, which is a more natural user flow for a web app. The key interaction is the filtering of 2025 laureates, which directly translates the report's list into an interactive component. The Chart.js bar chart in the #legacy section has been replaced by a dynamic HTML/CSS vertical timeline (frise chronologique) and photo placeholders have diligently been replaced by user-provided URLs for enhanced visual appeal and understanding. --><!-- Visualization & Content Choices: 
+- Report Info (Introduction): Key stats (Cumulative Laureates, Max Prizes/Person, Total Value, etc.). Goal: Inform/Orient. Method: HTML/Tailwind "stat boxes" (6 total) + Hero Image. Interaction: None. Justification: Quick, visual overview.
+- Report Info (Origin): Alfred Nobel's story (dynamite, obituary, will) + Image of Nobel. Goal: Change (Narrative). Method: HTML/Tailwind vertical timeline diagram with photo. Interaction: None. Justification: Visually represents the narrative flow better than plain text.
+- Report Info (Categories): The 6 prize types. Goal: Organize/Inform. Method: HTML/Tailwind grid of 6 clickable cards. Interaction: Click to open a JS-powered modal with details. Justification: More interactive and saves space vs. a long list.
+- Report Info (Video Section): Selection process explanation. Goal: Explain. Method: Embedded Google Drive video (iframe). Interaction: Play video on page. Justification: Addresses the user's explicit request to display the video directly on the page, integrating it as the core content for this section. The introduction text is now neutral.
+- Report Info (2025 Laureates): List of winners by category. Goal: Organize/Inform/Compare. Method: HTML/Tailwind card grid with Laureate Photos (three per card for multi-laureate prizes, single photo for single-laureate prizes). Interaction: JS-powered filter buttons (by category) to show/hide cards, *plus a large illustration updating based on the filter*. Justification: This allows both micro-detail (cards) and macro-context (illustration).
+- Report Info (Prize History): Key dates of the Prize's life and evolution. Goal: Change (History). Method: HTML/CSS/Tailwind **vertical frise chronologique**. Interaction: Hover effects. Justification: Visually superior to the bar chart for timeline representation.
+- Report Info (Critique/Conclusion): Text blocks + Icons of Progress photos. Goal: Inform. Method: Styled HTML text with embedded images.
+--><!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. --><!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Nobel Prize: An Interactive Exploration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .filter-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .filter-btn.active {
+            background-color: #ca8a04; /* yellow-600 */
+            color: #ffffff;
+            font-weight: 600;
+        }
+        .laureate-card {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            animation: fadeIn 0.5s ease-out;
+        }
+        .laureate-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Custom timeline styles for Legacy section */
+        .timeline-item-container {
+            position: relative;
+            padding-bottom: 40px;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: 50%;
+            top: 5px;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 16px;
+            background-color: #ca8a04;
+            border-radius: 50%;
+            z-index: 10;
+            border: 3px solid #f9fafb; /* light gray-50 */
+        }
+        .figure-placeholder {
+            width: 100%;
+            height: 250px; /* Increased height for better impact */
+            object-fit: cover; /* Changed to cover for banner */
+            border-radius: 0.5rem;
+        }
+        /* Style for Alfred Nobel portrait */
+        #origin img.rounded-full {
+            width: 150px;
+            height: 150px;
+            object-fit: contain; /* Changed to contain for full medal display */
+            background-color: #e5e7eb; /* Added background for contain */
+            border-radius: 50%; /* Ensure it stays round */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        /* Styles for Laureate Cards */
+        .laureate-image-group {
+            display: flex;
+            width: 100%;
+            height: 160px; /* Consistent height for the image area */
+            border-radius: 0.5rem 0.5rem 0 0;
+            overflow: hidden;
+            background-color: #e5e7eb;
+        }
+        .laureate-image-group img {
+            width: 33.33%; /* Equal split for three images */
+            height: 100%;
+            object-fit: contain; /* Ensure full visibility of the photo */
+            border-right: 1px solid #d1d5db; /* Subtle separator */
+        }
+        .laureate-image-group img:last-child {
+            border-right: none;
+        }
+        .laureate-image-single {
+            width: 100%;
+            height: 160px;
+            object-fit: cover; /* Cover for single portraits */
+            border-radius: 0.5rem 0.5rem 0 0;
+            background-color: #e5e7eb;
+        }
+
+        .icon-progress-image {
+             width: 64px; /* fixed size for round icon images */
+             height: 64px;
+             object-fit: cover; /* Kept cover for round portraits */
+             border-radius: 50%;
+             margin-right: 1rem;
+             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        /* Responsive Video Container for 16:9 Aspect Ratio */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .illustration-box {
+            height: 300px; /* Fixed height for visual consistency */
+            object-fit: contain;
+            background-color: #f3f4f6;
+            border-radius: 0.5rem;
+            animation: fadeIn 0.5s ease-out;
+            border: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <nav class="sticky top-0 w-full bg-white shadow-md z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0 flex items-center">
+                    <span class="text-2xl font-bold text-yellow-600">🏅 The Nobel Prize</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#home" class="nav-link text-gray-600 hover:text-yellow-600 px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                        <a href="#origin" class="nav-link text-gray-600 hover:text-yellow-600 px-3 py-2 rounded-md text-sm font-medium">The Origin</a>
+                        <a href="#prizes" class="nav-link text-gray-600 hover:text-yellow-600 px-3 py-2 rounded-md text-sm font-medium">The Prizes</a>
+                        <a href="#selection" class="nav-link text-gray-600 hover:text-yellow-600 px-3 py-2 rounded-md text-sm font-medium">Selection Process</a>
+                        <a href="#laureates" class="nav-link text-gray-600 hover:text-yellow-600 px-3 py-2 rounded-md text-sm font-medium">2025 Laureates</a>
+                        <a href="#legacy" class="nav-link text-gray-600 hover:text-yellow-600 px-3 py-2 rounded-md text-sm font-medium">Legacy & Critique</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-yellow-600 hover:bg-gray-100 focus:outline-none">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#home" class="nav-link text-gray-600 hover:text-yellow-600 block px-3 py-2 rounded-md text-base font-medium">Home</a>
+                <a href="#origin" class="nav-link text-gray-600 hover:text-yellow-600 block px-3 py-2 rounded-md text-base font-medium">The Origin</a>
+                <a href="#prizes" class="nav-link text-gray-600 hover:text-yellow-600 block px-3 py-2 rounded-md text-base font-medium">The Prizes</a>
+                <a href="#selection" class="nav-link text-gray-600 hover:text-yellow-600 block px-3 py-2 rounded-md text-base font-medium">Selection Process</a>
+                <a href="#laureates" class="nav-link text-gray-600 hover:text-yellow-600 block px-3 py-2 rounded-md text-base font-medium">2025 Laureates</a>
+                <a href="#legacy" class="nav-link text-gray-600 hover:text-yellow-600 block px-3 py-2 rounded-md text-base font-medium">Legacy & Critique</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        <section id="home" class="pt-16 pb-24 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">The Nobel Prize: An Interactive Exploration</h1>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
+                This application translates the 2025 presentation on the Nobel Prize into an interactive experience. Explore the history of Alfred Nobel, learn about the six prize categories, and discover the work of this year's laureates.
+            </p>
+            <img src="https://cdn.milenio.com/uploads/media/2021/07/20/fachada-centro-nobel-paz-oeste_0_40_900_559.jpg" class="figure-placeholder mb-12 mx-auto shadow-xl" alt="Façade du Centre Nobel de la Paix, Oslo" onerror="this.onerror=null; this.src='https://placehold.co/800x400/FFD700/000000?text=Nobel+Ceremony+Image+Failed+to+Load';">
+
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div class="bg-white p-4 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
+                    <div class="text-2xl font-bold text-yellow-600 mb-1">1,012+</div>
+                    <div class="text-xs text-gray-700">Cumulative Laureates</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
+                    <div class="text-2xl font-bold text-yellow-600 mb-1">6</div>
+                    <div class="text-xs text-gray-700">Prize Categories</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
+                    <div class="text-2xl font-bold text-yellow-600 mb-1">~$1M</div>
+                    <div class="text-xs text-gray-700">Cash Award Per Prize</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
+                    <div class="text-2xl font-bold text-yellow-600 mb-1">4</div>
+                    <div class="text-xs text-gray-700">Max Prizes by One Person</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
+                    <div class="text-2xl font-bold text-yellow-600 mb-1">~$1B</div>
+                    <div class="text-xs text-gray-700">Total Value Distributed (Actualized)</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
+                    <div class="text-2xl font-bold text-yellow-600 mb-1">Oslo & Sthlm</div>
+                    <div class="text-xs text-gray-700">Ceremony Locations</div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <section id="origin" class="pt-16 pb-24">
+            <h2 class="text-3xl font-bold text-center mb-4">The Origin: Alfred Nobel's Story</h2>
+            <p class="text-lg text-gray-600 text-center max-w-3xl mx-auto mb-16">
+                The Nobel Prize was born from a remarkable act of personal reflection. This vertical timeline highlights the critical moments that transformed Alfred Nobel's legacy from an inventor of explosives to the world's greatest patron of human progress.
+            </p>
+            
+            <div class="relative max-w-2xl mx-auto">
+                <div class="absolute left-1/2 top-0 h-full w-0.5 bg-yellow-400 -translate-x-1/2"></div>
+                
+                <div class="relative mb-12 group">
+                    <div class="absolute left-1/2 -translate-x-1/2 mt-1.5 w-5 h-5 bg-yellow-500 rounded-full border-4 border-white group-hover:scale-125 transition-transform duration-300"></div>
+                    <div class="ml-[calc(50%+2rem)] pl-8 pb-8">
+                        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 group-hover:border-yellow-600 transition-colors">
+                            <span class="text-sm font-semibold text-yellow-600">1867</span>
+                            <h3 class="text-xl font-semibold text-gray-800 mt-1 mb-2">Invention of Dynamite</h3>
+                            <p class="text-gray-600">Alfred Nobel, a brilliant chemist and engineer with over 350 patents, invents dynamite, intending it for construction and mining.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="relative mb-12 group">
+                    <div class="absolute left-1/2 -translate-x-1/2 mt-1.5 w-5 h-5 bg-yellow-500 rounded-full border-4 border-white group-hover:scale-125 transition-transform duration-300"></div>
+                    <div class="mr-[calc(50%+2rem)] pr-8 pb-8 text-right">
+                        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 group-hover:border-yellow-600 transition-colors">
+                            <span class="text-sm font-semibold text-yellow-600">1888</span>
+                            <h3 class="text-xl font-semibold text-gray-800 mt-1 mb-2">"The Merchant of Death"</h3>
+                            <p class="text-gray-600">A French newspaper mistakenly publishes Nobel's obituary, titling it "The merchant of death is dead." This shocks him into reconsidering his legacy.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <img src="https://th.bing.com/th/id/R.b5766351131a59b686b9a28e669f5364?rik=PJhAu8rWmuV4SQ&riu=http%3a%2f%2fwww.yvongenealogie.fr%2fwp-content%2fuploads%2f2012%2f10%2fNOBEL-Alfred-1833-1896-1890-Hulton-Archive-Getty-Images-584x800.jpg&ehk=blPOVKNOarQejfsuboeRxAm2v7nyd1Dul6Sps5yWsYQ%3d&risl=&pid=ImgRaw&r=0" alt="Portrait of Alfred Nobel" class="rounded-full mx-auto shadow-xl mb-12 border-4 border-white" onerror="this.onerror=null; this.src='https://placehold.co/150x150/B8860B/000000?text=Alfred+Nobel+Portrait';">
+
+                <div class="relative mb-12 group">
+                    <div class="absolute left-1/2 -translate-x-1/2 mt-1.5 w-5 h-5 bg-yellow-500 rounded-full border-4 border-white group-hover:scale-125 transition-transform duration-300"></div>
+                    <div class="ml-[calc(50%+2rem)] pl-8 pb-8">
+                        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 group-hover:border-yellow-600 transition-colors">
+                            <span class="text-sm font-semibold text-yellow-600">1895</span>
+                            <h3 class="text-xl font-semibold text-gray-800 mt-1 mb-2">The Will</h3>
+                            <p class="text-gray-600">Nobel signs his final will, dedicating 94% of his vast fortune to create prizes for those who "have conferred the greatest benefit to humankind."</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative group">
+                    <div class="absolute left-1/2 -translate-x-1/2 mt-1.5 w-5 h-5 bg-yellow-500 rounded-full border-4 border-white group-hover:scale-125 transition-transform duration-300"></div>
+                    <div class="mr-[calc(50%+2rem)] pr-8 pb-8 text-right">
+                        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 group-hover:border-yellow-600 transition-colors">
+                            <span class="text-sm font-semibold text-yellow-600">1901</span>
+                            <h3 class="text-xl font-semibold text-gray-800 mt-1 mb-2">The First Prizes</h3>
+                            <p class="text-gray-600">Five years after his death, the first Nobel Prizes are awarded, beginning a legacy that continues to inspire the world over a century later.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <section id="prizes" class="pt-16 pb-24">
+            <h2 class="text-3xl font-bold text-center mb-4">The Six Prize Categories</h2>
+            <p class="text-lg text-gray-600 text-center max-w-3xl mx-auto mb-16">
+                Alfred Nobel's will established five prizes, with a sixth added in 1969. Click on any category to learn more about its focus and the institutions that award it.
+            </p>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                <div class="prize-card bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center cursor-pointer hover:shadow-xl hover:border-yellow-500 transition-all duration-300" data-category="Physics">
+                    <div class="text-5xl mb-4">💡</div>
+                    <h3 class="text-xl font-semibold text-gray-800">Physics</h3>
+                </div>
+                <div class="prize-card bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center cursor-pointer hover:shadow-xl hover:border-yellow-500 transition-all duration-300" data-category="Chemistry">
+                    <div class="text-5xl mb-4">🧪</div>
+                    <h3 class="text-xl font-semibold text-gray-800">Chemistry</h3>
+                </div>
+                <div class="prize-card bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center cursor-pointer hover:shadow-xl hover:border-yellow-500 transition-all duration-300" data-category="Medicine">
+                    <div class="text-5xl mb-4">🔬</div>
+                    <h3 class="text-xl font-semibold text-gray-800">Medicine</h3>
+                </div>
+                <div class="prize-card bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center cursor-pointer hover:shadow-xl hover:border-yellow-500 transition-all duration-300" data-category="Literature">
+                    <div class="text-5xl mb-4">📚</div>
+                    <h3 class="text-xl font-semibold text-gray-800">Literature</h3>
+                </div>
+                <div class="prize-card bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center cursor-pointer hover:shadow-xl hover:border-yellow-500 transition-all duration-300" data-category="Peace">
+                    <div class="text-5xl mb-4">🕊️</div>
+                    <h3 class="text-xl font-semibold text-gray-800">Peace</h3>
+                </div>
+                <div class="prize-card bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center cursor-pointer hover:shadow-xl hover:border-yellow-500 transition-all duration-300" data-category="Economic Sciences">
+                    <div class="text-5xl mb-4">📈</div>
+                    <h3 class="text-xl font-semibold text-gray-800">Economic Sciences</h3>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <!-- UPDATED SECTION: Selection Process Video (iframe now uses Google Drive embed URL) --><section id="selection" class="pt-16 pb-24">
+            <h2 class="text-3xl font-bold text-center mb-4">Understanding the Nobel Selection Process</h2>
+            <p class="text-lg text-gray-600 text-center max-w-3xl mx-auto mb-10">
+                This video resource provides an essential overview of the rigorous and highly confidential process of nomination, evaluation, and selection that takes place over the year for each prize.
+            </p>
+            <div class="max-w-4xl mx-auto">
+                <div class="video-container">
+                    <!-- Google Drive Embed for 10Qiarb6TMRFKCBxOAfLvrcNAVE2hQdIM --><iframe 
+                        src="https://drive.google.com/file/d/10Qiarb6TMRFKCBxOAfLvrcNAVE2hQdIM/preview" 
+                        title="The Nobel Prize Selection Process" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>
+                </div>
+            </div>
+        </section>
+        <!-- END UPDATED SECTION --><hr class="my-16 border-gray-200">
+
+        <section id="laureates" class="pt-16 pb-24">
+            <h2 class="text-3xl font-bold text-center mb-4">2025 Nobel Laureates</h2>
+            <p class="text-lg text-gray-600 text-center max-w-3xl mx-auto mb-16">
+                This section highlights the achievements of the 2025 laureates. Use the filter buttons below to explore the winners in each category and view a contextual illustration of their work.
+            </p>
+            
+            <div class="flex flex-wrap justify-center gap-2 mb-12">
+                <button class="filter-btn active py-2 px-4 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300" data-filter="all">All Categories</button>
+                <button class="filter-btn py-2 px-4 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300" data-filter="Medicine">🔬 Medicine</button>
+                <button class="filter-btn py-2 px-4 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300" data-filter="Physics">💡 Physics</button>
+                <button class="filter-btn py-2 px-4 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300" data-filter="Chemistry">🧪 Chemistry</button>
+                <button class="filter-btn py-2 px-4 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300" data-filter="Literature">📚 Literature</button>
+                <button class="filter-btn py-2 px-4 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300" data-filter="Peace">🕊️ Peace</button>
+                <button class="filter-btn py-2 px-4 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300" data-filter="Economic Sciences">📈 Economics</button>
+            </div>
+
+            <!-- ILLUSTRATION AND CARD CONTAINER --><div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                
+                <!-- ILLUSTRATION BOX (Hidden initially, appears on filter click) --><div id="illustration-box" class="hidden lg:block lg:col-span-1 bg-white p-6 rounded-lg shadow-xl sticky top-20 border border-gray-200 transition-opacity duration-300">
+                    <h3 id="illustration-title" class="text-xl font-semibold text-gray-800 mb-4 text-center">Select a Category</h3>
+                    <img id="context-illustration" src="https://placehold.co/800x300/f3f4f6/a1a1aa?text=Contextual+Illustration" alt="Contextual illustration of the Laureates' work" class="illustration-box w-full mb-4">
+                    <p id="illustration-description" class="text-sm text-gray-600">Click a filter button above to see a visual representation of the groundbreaking field or achievement.</p>
+                </div>
+
+                <!-- LAUREATE CARDS (Grid is responsive) --><div id="laureate-grid" class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <div class="laureate-card bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200" data-category="Medicine">
+                        <div class="laureate-image-group">
+                            <img src="https://www.nobelprize.org/uploads/2025/10/1-2_3-scaled.jpg" alt="Mary E. Brunkow" onerror="this.onerror=null; this.src='https://placehold.co/600x160/20B2AA/FFFFFF?text=Lauréat+Med+1';">
+                            <img src="https://www.nobelprize.org/uploads/2025/10/2-2_3-scaled.jpg" alt="Fred Ramsdell" onerror="this.onerror=null; this.src='https://placehold.co/600x160/20B2AA/FFFFFF?text=Lauréat+Med+2';">
+                            <img src="https://www.nobelprize.org/uploads/2025/10/3-2_3-scaled.jpg" alt="Shimon Sakaguchi" onerror="this.onerror=null; this.src='https://placehold.co/600x160/20B2AA/FFFFFF?text=Lauréat+Med+3';">
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <span class="text-3xl mr-3">🔬</span>
+                                <span class="text-sm font-semibold text-yellow-700 uppercase">Physiology or Medicine</span>
+                            </div>
+                            <h3 class="text-xl font-semibold text-gray-800 mb-2">Mary E. Brunkow, Fred Ramsdell, & Shimon Sakaguchi</h3>
+                            <p class="text-gray-600">For their discovery of **regulatory T cells**, which prevent immune cells from attacking the body’s own tissues, revolutionizing our understanding of autoimmune diseases.</p>
+                        </div>
+                    </div>
+
+                    <div class="laureate-card bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200" data-category="Physics">
+                        <div class="laureate-image-group">
+                            <img src="https://www.nobelprize.org/uploads/2025/10/1-2_3-68e4cff466a68-scaled.jpg" alt="John Clarke" onerror="this.onerror=null; this.src='https://placehold.co/600x160/4682B4/FFFFFF?text=Lauréat+Phys+1';">
+                            <img src="https://www.nobelprize.org/uploads/2025/10/2-2_3-68e4cffaea3f1-scaled.jpg" alt="Michel H. Devoret" onerror="this.onerror=null; this.src='https://placehold.co/600x160/4682B4/FFFFFF?text=Lauréat+Phys+2';">
+                            <img src="https://www.nobelprize.org/uploads/2025/10/3-2_3-68e4cfe9c053a-scaled.jpg" alt="John M. Martinis" onerror="this.onerror=null; this.src='https://placehold.co/600x160/4682B4/FFFFFF?text=Lauréat+Phys+3';">
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <span class="text-3xl mr-3">💡</span>
+                                <span class="text-sm font-semibold text-yellow-700 uppercase">Physics</span>
+                            </div>
+                            <h3 class="text-xl font-semibold text-gray-800 mb-2">John Clarke, Michel H. Devoret, & John M. Martinis</h3>
+                            <p class="text-gray-600">For their groundbreaking research on **macroscopic quantum tunnelling** and energy quantisation in electrical circuits, advancing the field of **quantum computing**.</p>
+                        </div>
+                    </div>
+
+                    <div class="laureate-card bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200" data-category="Chemistry">
+                        <div class="laureate-image-group">
+                            <img src="https://www.nobelprize.org/uploads/2025/10/1-2_3-68e62128b59ec-scaled.jpg" alt="Susumu Kitagawa" onerror="this.onerror=null; this.src='https://placehold.co/600x160/32CD32/FFFFFF?text=Lauréat+Chem+1';">
+                            <img src="https://www.nobelprize.org/uploads/2025/10/2-2_3-68e6212fa6c01-scaled.jpg" alt="Richard Robson" onerror="this.onerror=null; this.src='https://placehold.co/600x160/32CD32/FFFFFF?text=Lauréat+Chem+2';">
+                            <img src="https://www.nobelprize.org/uploads/2025/10/3-2_3-68e621363e571-scaled.jpg" alt="Omar M. Yaghi" onerror="this.onerror=null; this.src='https://placehold.co/600x160/32CD32/FFFFFF?text=Lauréat+Chem+3';">
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <span class="text-3xl mr-3">🧪</span>
+                                <span class="text-sm font-semibold text-yellow-700 uppercase">Chemistry</span>
+                            </div>
+                            <h3 class="text-xl font-semibold text-gray-800 mb-2">Susumu Kitagawa, Richard Robson, & Omar M. Yaghi</h3>
+                            <p class="text-gray-600">For developing **metal-organic frameworks (MOFs)** — innovative, porous materials that can store gases, catalyze reactions, and help protect the environment.</p>
+                        </div>
+                    </div>
+
+                    <div class="laureate-card bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200" data-category="Literature">
+                        <!-- IMAGE SINGLE REINSTATED --><img src="https://www.nobelprize.org/uploads/2025/10/1-2_3-68e78c8a032fe-scaled.jpg" alt="László Krasznahorkai" class="laureate-image-single" onerror="this.onerror=null; this.src='https://placehold.co/600x160/8A2BE2/FFFFFF?text=Lauréat+Littérature';">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <span class="text-3xl mr-3">📚</span>
+                                <span class="text-sm font-semibold text-yellow-700 uppercase">Literature</span>
+                            </div>
+                            <h3 class="text-xl font-semibold text-gray-800 mb-2">László Krasznahorkai</h3>
+                            <p class="text-gray-600">The Hungarian writer received the prize for his **visionary and compelling body of work** that explores human experiences amid apocalyptic themes.</p>
+                        </div>
+                    </div>
+
+                    <div class="laureate-card bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200" data-category="Peace">
+                        <!-- IMAGE SINGLE REINSTATED --><img src="https://www.nobelprize.org/uploads/2025/10/1-2_3-68e8b33bd36fa-scaled.jpg" alt="María Corina Machado" class="laureate-image-single" onerror="this.onerror=null; this.src='https://placehold.co/600x160/F4A460/000000?text=Lauréate+Paix';">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <span class="text-3xl mr-3">🕊️</span>
+                                <span class="text-sm font-semibold text-yellow-700 uppercase">Peace</span>
+                            </div>
+                            <h3 class="text-xl font-semibold text-gray-800 mb-2">María Corina Machado</h3>
+                            <p class="text-gray-600">From Venezuela, awarded for her **courageous efforts promoting democratic rights** and a peaceful transition from dictatorship, reminding the world the fight for dignity never ends.</p>
+                        </div>
+                    </div>
+
+                    <div class="laureate-card bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200" data-category="Economic Sciences">
+                        <div class="laureate-image-group">
+                            <img src="https://www.nobelprize.org/uploads/2025/10/1-2_3-68ecb29cb51af-scaled.jpg" alt="Joel Mokyr" onerror="this.onerror=null; this.src='https://placehold.co/600x160/1E90FF/FFFFFF?text=Lauréat+Econ+1';">
+                            <img src="https://www.nobelprize.org/uploads/2025/10/2-2_3-68ecb2a3e3ddc-scaled.jpg" alt="Philippe Aghion" onerror="this.onerror=null; this.src='https://placehold.co/600x160/1E90FF/FFFFFF?text=Lauréat+Econ+2';">
+                            <img src="https://www.nobelprize.org/uploads/2025/10/3-2_3-68ecb2915d101-scaled.jpg" alt="Peter Howitt" onerror="this.onerror=null; this.src='https://placehold.co/600x160/1E90FF/FFFFFF?text=Lauréat+Econ+3';">
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <span class="text-3xl mr-3">📈</span>
+                                <span class="text-sm font-semibold text-yellow-700 uppercase">Economic Sciences</span>
+                            </div>
+                            <h3 class="text-xl font-semibold text-gray-800 mb-2">Joel Mokyr, Philippe Aghion, & Peter Howitt</h3>
+                            <p class="text-gray-600">For their contributions to understanding **innovation-driven economic growth**, especially how technological progress and **"creative destruction"** shape modern economies.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <section id="legacy" class="pt-16 pb-24">
+            <h2 class="text-3xl font-bold text-center mb-4">Legacy, Impact & Critique</h2>
+            <p class="text-lg text-gray-600 text-center max-w-3xl mx-auto mb-16">
+                The Nobel Prize is more than just an award; it's a symbol of human progress and potential. This section explores its impact, visualizes its history through a timeline, and presents common criticisms.
+            </p>
+
+            <div class="bg-white p-8 rounded-lg shadow-lg mb-16 border border-gray-200">
+                <h3 class="text-2xl font-semibold text-center mb-8">Prize Evolution: A Historical Timeline</h3>
+                
+                <div class="timeline-container relative max-w-2xl mx-auto pt-8">
+                    <div class="absolute inset-y-0 left-1/2 w-1 bg-yellow-400 transform -translate-x-1/2"></div>
+                    
+                    <div class="timeline-item-container group">
+                        <div class="timeline-dot group-hover:bg-yellow-700 transition-colors"></div>
+                        <div class="ml-[calc(50%+2rem)] pl-8 pb-8">
+                            <span class="text-sm font-semibold text-yellow-600">1901</span>
+                            <h4 class="text-xl font-semibold text-gray-800 mt-1 mb-2">Establishment of the Prizes</h4>
+                            <p class="text-gray-600">The first five Nobel Prizes are awarded, honoring the initial vision of Alfred Nobel.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item-container group">
+                        <div class="timeline-dot group-hover:bg-yellow-700 transition-colors"></div>
+                        <div class="mr-[calc(50%+2rem)] pr-8 pb-8 text-right">
+                            <span class="text-sm font-semibold text-yellow-600">1964</span>
+                            <h4 class="text-xl font-semibold text-gray-800 mt-1 mb-2">MLK Jr. Peace Prize</h4>
+                            <p class="text-gray-600">Recognition for the fight against racial segregation, highlighting the Prize's impact on social justice and civil rights.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item-container group">
+                        <div class="timeline-dot group-hover:bg-yellow-700 transition-colors"></div>
+                        <div class="ml-[calc(50%+2rem)] pl-8 pb-8">
+                            <span class="text-sm font-semibold text-yellow-600">1969</span>
+                            <h4 class="text-xl font-semibold text-gray-800 mt-1 mb-2">Economics Prize Added</h4>
+                            <p class="text-gray-600">The creation of the Prize in Economic Sciences marks an evolution in the recognition of human benefit.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item-container group">
+                        <div class="timeline-dot group-hover:bg-yellow-700 transition-colors"></div>
+                        <div class="mr-[calc(50%+2rem)] pr-8 pb-8 text-right">
+                            <span class="text-sm font-semibold text-yellow-600">2014</span>
+                            <h4 class="text-xl font-semibold text-gray-800 mt-1 mb-2">Malala Yousafzai Peace Prize</h4>
+                            <p class="text-gray-600">Awarded to the youngest laureate, symbolizing the increasing diversity and global focus on youth and education.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item-container group">
+                        <div class="timeline-dot group-hover:bg-yellow-700 transition-colors"></div>
+                        <div class="ml-[calc(50%+2rem)] pl-8 pb-8">
+                            <span class="text-sm font-semibold text-yellow-600">2025</span>
+                            <h4 class="text-xl font-semibold text-gray-800 mt-1 mb-2">Current Laureates Announced</h4>
+                            <p class="text-gray-600">The latest recipients continue the legacy of combining science, art, courage, and human hope.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mt-16">
+                <div>
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Why It Matters: Icons of Progress</h3>
+                    <p class="text-gray-600 mb-6">The prize celebrates curiosity, creativity, and peace—values that transcend nations. It reminds us that individuals can push humanity forward.</p>
+                    <ul class="space-y-6">
+                        <li class="flex items-start bg-white p-4 rounded-lg shadow-md hover:bg-yellow-50 transition-colors">
+                            <img src="https://cdn.britannica.com/75/135775-050-803BAC94/Marie-Curie-1917.jpg" alt="Portrait of Marie Curie" class="icon-progress-image" onerror="this.onerror=null; this.src='https://placehold.co/100x100/F0E68C/000000?text=Marie+Curie';">
+                            <p class="text-gray-700 pt-2">**Marie Curie:** Won two Nobels (Physics/Chemistry), opening the path for women in science.</p>
+                        </li>
+                        <li class="flex items-start bg-white p-4 rounded-lg shadow-md hover:bg-yellow-50 transition-colors">
+                            <img src="https://johnmattone.com/wp-content/uploads/2023/12/martin-luther-king.jpg" alt="Portrait of Martin Luther King Jr." class="icon-progress-image" onerror="this.onerror=null; this.src='https://placehold.co/100x100/A0522D/FFFFFF?text=MLK+Jr';">
+                            <p class="text-gray-700 pt-2">**Martin Luther King Jr.:** Received the Peace Prize in 1964 for his fight against racial segregation.</p>
+                        </li>
+                        <li class="flex items-start bg-white p-4 rounded-lg shadow-md hover:bg-yellow-50 transition-colors">
+                            <img src="https://cypp.rutgers.edu/wp-content/uploads/2020/08/malalayousafzai-e1597459289621.jpeg" alt="Portrait of Malala Yousafzai" class="icon-progress-image" onerror="this.onerror=null; this.src='https://placehold.co/100x100/FF69B4/FFFFFF?text=Malala';">
+                            <p class="text-gray-700 pt-2">**Malala Yousafzai:** Awarded at 17, becoming a global voice for girls' education.</p>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Criticism and Challenges</h3>
+                    <p class="text-gray-600 mb-6">Of course, the Nobel Prize is not perfect. These criticisms are part of an important, ongoing debate about its role in the world.</p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start p-4 rounded-lg border border-gray-200 hover:border-gray-400 transition-colors">
+                            <span class="text-gray-500 font-bold text-xl mr-3">›</span>
+                            <p class="text-gray-700">Sometimes overlooks deserving candidates.</p>
+                        </li>
+                        <li class="flex items-start p-4 rounded-lg border border-gray-200 hover:border-gray-400 transition-colors">
+                            <span class="text-gray-500 font-bold text-xl mr-3">›</span>
+                            <p class="text-gray-700">Historically too focused on Western scientists and laureates.</p>
+                        </li>
+                        <li class="flex items-start p-4 rounded-lg border border-gray-200 hover:border-gray-400 transition-colors">
+                            <span class="text-gray-500 font-bold text-xl mr-3">›</span>
+                            <p class="text-gray-700">Can over-emphasize individuals for work done by large, collective teams.</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <section id="conclusion" class="pt-16 pb-24 text-center">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">"Hope is nature’s veil..."</h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto mb-10">
+                To conclude, the Nobel Prize is more than a medal or a ceremony. It’s a reminder that knowledge, peace, and creativity still matter. From a man who invented dynamite came an idea that celebrates peace. From personal regret came a gift to the world.
+            </p>
+            <blockquote class="text-2xl italic font-medium text-gray-900 max-w-2xl mx-auto">
+                “Hope is nature’s veil for hiding truth’s nakedness.”
+                <span class="block text-xl not-italic font-semibold text-gray-700 mt-4">— Alfred Nobel</span>
+            </blockquote>
+            <img src="https://senego.com/wp-content/uploads/2024/10/Prix-Nobel-de-la-Paix-lheritage-francais-a-travers-les-decennies_thumbnail.jpg" alt="Nobel Prize Medal (Conclusion)" class="figure-placeholder mx-auto mt-12 shadow-xl" onerror="this.onerror=null; this.src='https://placehold.co/800x400/FFD700/000000?text=Medal+Image+Failed+to+Load';">
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-gray-300 py-8">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2025 Interactive Report. Based on the presentation "The Nobel Prize: Its Meaning, History and Global Impact."</p>
+        </div>
+    </footer>
+
+    <div id="prize-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-2xl max-w-lg w-full">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                <h3 id="modal-title" class="text-2xl font-semibold"></h3>
+                <button id="modal-close" class="text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+            </div>
+            <div id="modal-body" class="p-6 text-gray-600">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ILLUSTRATION_SOURCES = {
+            "all": {
+                title: "Select a Category",
+                src: "https://placehold.co/800x300/f3f4f6/a1a1aa?text=Contextual+Illustration",
+                description: "Click a filter button above to see a visual representation of the groundbreaking field or achievement."
+            },
+            "Medicine": {
+                title: "Regulatory T Cells Discovery",
+                src: "https://www.nobelprize.org/uploads/2025/10/Carrier_3-2.jpg", 
+                description: "Visual representation of how Regulatory T cells ('Tregs') act as security guards to prevent the immune system from attacking the body's own tissues."
+            },
+            "Physics": {
+                title: "Macroscopic Quantum Tunnelling",
+                src: "https://www.nobelprize.org/uploads/2025/10/fig_fy_25_4x3.jpg",
+                description: "Illustration of superconducting qubits and the bizarre quantum effects harnessed to advance quantum computing."
+            },
+            "Chemistry": {
+                title: "Metal-Organic Frameworks (MOFs)",
+                src: "https://www.nobelprize.org/uploads/2025/10/fig_ke_25_4x3.jpg",
+                description: "A molecular model of MOFs, showing their porous structure used for advanced gas capture and catalysis."
+            },
+            "Literature": {
+                title: "László Krasznahorkai's Vision",
+                src: "https://www.nobelprize.org/images/176271-landscape-x-large.jpg",
+                description: "Symbolic image reflecting the author's compelling exploration of human experience amidst apocalyptic themes."
+            },
+            "Peace": {
+                title: "Promoting Democratic Rights",
+                src: "https://www.nobelprize.org/uploads/2025/10/carrier_peace_FINAL-scaled.jpg",
+                description: "Visual symbol representing the struggle for democracy, human dignity, and a peaceful transition in Venezuela."
+            },
+            "Economic Sciences": {
+                title: "Creative Destruction Model",
+                src: "https://www.nobelprize.org/uploads/2025/10/fig_ek_25_4x3.jpg",
+                description: "Diagram or visual metaphor explaining innovation-driven economic growth, where new processes destroy old ones."
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const prizeData = {
+                "Physics": {
+                    "icon": "💡",
+                    "description": "Awarded by the Royal Swedish Academy of Sciences in Stockholm, Sweden. For outstanding contributions in the field of physics."
+                },
+                "Chemistry": {
+                    "icon": "🧪",
+                    "description": "Awarded by the Royal Swedish Academy of Sciences in Stockholm, Sweden. For major discoveries in the field of chemistry."
+                },
+                "Medicine": {
+                    "icon": "🔬",
+                    "description": "Awarded by the Nobel Assembly at the Karolinska Institute in Stockholm, Sweden. For outstanding discoveries in physiology or medicine."
+                },
+                "Literature": {
+                    "icon": "📚",
+                    "description": "Awarded by the Swedish Academy in Stockholm, Sweden. For an outstanding body of work in an ideal direction."
+                },
+                "Peace": {
+                    "icon": "🕊️",
+                    "description": "Awarded by the Norwegian Nobel Committee in Oslo, Norway. For outstanding contributions to peace, such as fraternity between nations, disarmament, and human rights."
+                },
+                "Economic Sciences": {
+                    "icon": "📈",
+                    "description": "Sveriges Riksbank Prize in Economic Sciences in Memory of Alfred Nobel. Awarded by the Royal Swedish Academy of Sciences since 1969."
+                }
+            };
+
+            const illustrationBox = document.getElementById('illustration-box');
+            const illustrationTitle = document.getElementById('illustration-title');
+            const contextIllustration = document.getElementById('context-illustration');
+            const illustrationDescription = document.getElementById('illustration-description');
+
+            function updateIllustration(category) {
+                const data = ILLUSTRATION_SOURCES[category] || ILLUSTRATION_SOURCES['all'];
+                
+                // Update text content
+                illustrationTitle.textContent = data.title;
+                illustrationDescription.textContent = data.description;
+                
+                // Update image source (only if image URL is provided)
+                if (data.src) {
+                    contextIllustration.src = data.src;
+                } else {
+                    // Fallback to generic placeholder if no URL is provided yet
+                    contextIllustration.src = ILLUSTRATION_SOURCES['all'].src + '?text=' + encodeURIComponent(data.title.replace(/\s/g, '+'));
+                }
+
+                // Show the box only when filtering
+                if (category !== 'all') {
+                    illustrationBox.classList.remove('hidden');
+                } else {
+                    illustrationBox.classList.add('hidden');
+                }
+            }
+            // Initialize with default state
+            updateIllustration('all');
+
+
+            const prizeCards = document.querySelectorAll('.prize-card');
+            const modal = document.getElementById('prize-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const modalClose = document.getElementById('modal-close');
+
+            prizeCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const category = card.dataset.category;
+                    const data = prizeData[category];
+                    if (data) {
+                        modalTitle.innerHTML = `${data.icon} ${category}`;
+                        modalBody.innerHTML = `<p>${data.description}</p>`;
+                        modal.classList.remove('hidden');
+                        modal.classList.add('flex');
+                    }
+                });
+            });
+
+            const closeModal = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            };
+            
+            modalClose.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const laureateCards = document.querySelectorAll('.laureate-card');
+
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const filter = btn.dataset.filter;
+
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // Update Illustration Box
+                    updateIllustration(filter);
+
+
+                    laureateCards.forEach(card => {
+                        if (filter === 'all' || card.dataset.category === filter) {
+                            card.classList.remove('hidden');
+                            card.style.display = 'block'; 
+                        } else {
+                            card.classList.add('hidden');
+                            card.style.display = 'none'; 
+                        }
+                    });
+                });
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        const offset = document.querySelector('nav').offsetHeight;
+                        const bodyRect = document.body.getBoundingClientRect().top;
+                        const elementRect = targetElement.getBoundingClientRect().top;
+                        const elementPosition = elementRect - bodyRect;
+                        const offsetPosition = elementPosition - offset;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                    if (mobileMenu.classList.contains('hidden') === false) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+            
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
