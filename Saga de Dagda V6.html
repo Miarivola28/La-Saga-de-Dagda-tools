@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>La Saga de Dagda - Final Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- THEMES --- */
+        :root { --primary: #1e3a8a; --bg: #eff6ff; --accent: #2563eb; --border: #bfdbfe; }
+        body.theme-t1 { --primary: #1e3a8a; --bg: #eff6ff; } /* Bleu */
+        body.theme-t2 { --primary: #14532d; --bg: #f0fdf4; } /* Vert */
+        body.theme-t3 { --primary: #7f1d1d; --bg: #fef2f2; } /* Rouge */
+        body.theme-ext { --primary: #581c87; --bg: #faf5ff; } /* Violet */
+
+        body { 
+            font-family: 'Lato', sans-serif; 
+            background-color: var(--bg);
+            transition: background 0.5s ease;
+            padding-top: 140px; 
+            padding-bottom: 20px;
+        }
+        
+        h1, .title-font { font-family: 'Cinzel', serif; }
+        
+        .card {
+            background: white; border: 2px solid var(--border);
+            border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 12px;
+        }
+
+        /* --- HEADER --- */
+        #main-header {
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 50;
+            background-color: var(--primary); color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: background 0.5s;
+        }
+        .saga-title {
+            text-align: center; font-size: 1.2rem; font-weight: bold;
+            letter-spacing: 2px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.2);
+        }
+
+        .nav-tab {
+            flex: 1; text-align: center; padding: 12px; cursor: pointer;
+            border-bottom: 4px solid transparent; opacity: 0.7; font-size: 0.8rem; font-weight: bold;
+        }
+        .nav-tab.active { opacity: 1; border-bottom-color: white; background: rgba(255,255,255,0.1); }
+
+        /* --- UI ELEMENTS --- */
+        .stat-btn { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; cursor: pointer; }
+        .btn-minus { background: #fee2e2; color: #991b1b; }
+        .btn-plus { background: #dcfce7; color: #166534; }
+        .prog-bar-bg { background: #e2e8f0; height: 14px; border-radius: 7px; overflow: hidden; border: 1px solid #cbd5e1; }
+        .prog-bar-fill { height: 100%; transition: width 0.3s; }
+
+        /* --- CARTE --- */
+        #mapContainer {
+            width: 100%; height: 60vh; 
+            overflow: auto; 
+            border: 2px solid var(--primary); background: white; position: relative;
+            touch-action: pan-x pan-y;
+        }
+        #drawingCanvas { 
+            background-image: radial-gradient(#ccc 1px, transparent 1px); background-size: 20px 20px; 
+            cursor: crosshair; display: block;
+        }
+        .compass {
+            position: absolute; top: 10px; right: 10px; width: 50px; height: 50px; pointer-events: none; opacity: 0.8; z-index: 10;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Brosen_windrose.svg/1024px-Brosen_windrose.svg.png') center/contain no-repeat;
+        }
+
+        /* --- STATUS FEEDBACK --- */
+        .fade-text { transition: opacity 1s; opacity: 0; font-weight: bold; color: #4ade80; margin-left: 5px; font-size: 10px; }
+        .fade-in { opacity: 1; }
+
+        /* --- MODALS --- */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body class="theme-t1">
+
+    <header id="main-header">
+        <div class="saga-title title-font">LA SAGA DE DAGDA</div>
+        
+        <div class="flex justify-between items-center p-2 px-4 gap-2">
+            <select id="tomeSelect" onchange="changeTome()" class="bg-black/20 border border-white/30 rounded text-xs p-1 text-white truncate flex-1">
+                <option value="1">Tome 1 : La Harpe des quatre saisons</option>
+                <option value="2">Tome 2 : La Confrérie de Nuada</option>
+                <option value="3">Tome 3 : Les Entrailles du temps</option>
+                <option value="4">Extension : Le Royaume des Ombres</option>
+            </select>
+            
+            <div class="flex items-center gap-1 bg-black/20 p-1 rounded border border-white/30">
+                <span class="text-[10px] font-bold uppercase ml-1">Chap.</span>
+                <input type="number" id="chapterInput" class="w-12 text-center rounded text-black font-bold p-0.5 text-sm" value="1">
+                <button onclick="validateChapter()" class="bg-white/20 hover:bg-white/40 text-white rounded px-2 py-0.5 text-xs">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <span id="chapStatus" class="fade-text">OK</span>
+            </div>
+        </div>
+
+        <div class="flex">
+            <div class="nav-tab active" onclick="switchTab('tab-aventure')"><i class="fas fa-sword"></i> Aventure</div>
+            <div class="nav-tab" onclick="switchTab('tab-carte')"><i class="fas fa-map"></i> Carte</div>
+            <div class="nav-tab" onclick="switchTab('tab-journal')"><i class="fas fa-book"></i> Journal</div>
+        </div>
+    </header>
+
+    <div class="max-w-3xl mx-auto p-4">
+
+        <div id="setup-screen" class="card p-6 border-l-4 border-l-yellow-500 z-50 relative">
+            <h2 class="text-2xl font-bold mb-4 title-font text-center">Nouvelle Partie</h2>
+            <div class="space-y-3">
+                <input type="text" id="setupName" class="w-full p-2 border rounded" placeholder="Nom du Héros">
+                <select id="setupMode" class="w-full p-2 border rounded">
+                    <option value="Simplifié">Mode Simplifié (Checkpoints)</option>
+                    <option value="Narratif">Mode Narratif</option>
+                    <option value="Mortel">Mode Mortel</option>
+                </select>
+                <select id="setupTalent" class="w-full p-2 border rounded">
+                    <option value="Instinct">Instinct</option>
+                    <option value="Herbologie">Herbologie</option>
+                    <option value="Discrétion">Discrétion</option>
+                    <option value="Persuasion">Persuasion</option>
+                    <option value="Observation">Observation</option>
+                    <option value="Doigts Agiles">Doigts Agiles</option>
+                    <option value="Empratique">Empratique</option>
+                </select>
+                <button onclick="startGame()" class="w-full bg-blue-900 text-white p-3 rounded font-bold">COMMENCER</button>
+                <div class="text-center text-xs mt-2">- OU -</div>
+                <label class="block w-full text-center p-2 bg-gray-200 rounded cursor-pointer border border-gray-300 hover:bg-gray-300">
+                    <i class="fas fa-upload"></i> Charger Sauvegarde (.json)
+                    <input type="file" class="hidden" onchange="loadFromFile(this)">
+                </label>
+            </div>
+        </div>
+
+        <div id="game-ui" class="hidden">
+
+            <div id="tab-aventure" class="tab-content block space-y-3">
+                
+                <div id="quickSaveArea" class="hidden mb-2">
+                    <button onclick="createCheckpoint()" class="w-full py-2 bg-blue-100 text-blue-800 rounded border border-blue-300 font-bold text-xs hover:bg-blue-200 transition">
+                        <i class="fas fa-save"></i> SAUVEGARDE RAPIDE (CHECKPOINT)
+                    </button>
+                </div>
+
+                <div class="card p-3">
+                    <div class="mb-3">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold flex items-center gap-1"><i class="fas fa-heart text-red-600"></i> SANTÉ</span>
+                            <div class="flex items-center gap-2">
+                                <span id="pvText" class="font-bold text-sm">0/0</span>
+                                <div class="flex items-center gap-0.5 bg-gray-100 rounded px-1 border">
+                                    <span class="text-[10px] text-gray-500 mr-1">MAX</span>
+                                    <div class="stat-btn btn-minus w-4 h-4 text-[10px]" onclick="modStat('pvMax', -1)">-</div>
+                                    <div class="stat-btn btn-plus w-4 h-4 text-[10px]" onclick="modStat('pvMax', 1)">+</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="prog-bar-bg"><div id="pvBar" class="prog-bar-fill bg-red-600" style="width: 50%;"></div></div>
+                        <div class="flex justify-between mt-1 px-1">
+                            <button onclick="modStat('pv', -1)" class="stat-btn btn-minus">-1</button>
+                            <button onclick="modStat('pv', 1)" class="stat-btn btn-plus">+1</button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="flex justify-between text-xs font-bold mb-1">
+                            <span class="flex items-center gap-1"><i class="fas fa-star text-yellow-500"></i> CHANCE</span>
+                            <span id="chanceText">0</span>
+                        </div>
+                        <div class="prog-bar-bg"><div id="chanceBar" class="prog-bar-fill bg-yellow-500" style="width: 0%;"></div></div>
+                        <div class="flex justify-between mt-1 px-1">
+                            <button onclick="modStat('chance', -1)" class="stat-btn btn-minus">-1</button>
+                            <button onclick="modStat('chance', 1)" class="stat-btn btn-plus">+1</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 border-t pt-2 text-center">
+                        <div>
+                            <div class="text-[10px] uppercase text-gray-500">Dextérité</div>
+                            <div class="flex justify-center items-center gap-2">
+                                <button onclick="modStat('dex', -1)" class="text-red-500 font-bold px-1">-</button>
+                                <span id="dexDisplay" class="font-bold text-lg text-blue-800">7</span>
+                                <button onclick="modStat('dex', 1)" class="text-green-500 font-bold px-1">+</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] uppercase text-gray-500">Talents</div>
+                            <div id="talentDisplay" class="font-bold text-xs leading-tight">Instinct</div>
+                            <button onclick="addTalent()" class="text-[10px] text-blue-600 underline mt-1">+ Ajouter</button>
+                        </div>
+                        <div>
+                            <div class="text-[10px] uppercase text-gray-500">Boulons</div>
+                            <input type="number" id="goldDisplay" class="w-12 text-center font-bold border-b bg-transparent" value="0" onchange="updateGold(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-3">
+                    <h3 class="text-xs font-bold text-gray-500 mb-2 border-b">LANCER DE DÉS</h3>
+                    <div class="flex items-center gap-4">
+                        <div class="flex flex-col gap-1 w-1/4">
+                            <button onclick="rollDiceVisual(1)" class="bg-gray-200 text-xs py-1 rounded">1 Dé</button>
+                            <button onclick="rollDiceVisual(2)" class="bg-gray-300 text-xs py-1 rounded">2 Dés</button>
+                        </div>
+                        <div id="diceVisual" class="flex-1 flex justify-center gap-2 h-10 items-center">
+                            <span class="text-xs text-gray-400 italic">...</span>
+                        </div>
+                        <div class="w-1/4 text-center">
+                            <div class="text-[10px] text-gray-500">Chance</div>
+                            <div class="flex justify-center gap-1">
+                                <button onclick="useLuck(-1)" id="lkDn" class="w-6 bg-yellow-100 border border-yellow-400 rounded disabled:opacity-50">-</button>
+                                <button onclick="useLuck(1)" id="lkUp" class="w-6 bg-yellow-100 border border-yellow-400 rounded disabled:opacity-50">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="diceTotal" class="text-center font-bold text-blue-900 mt-1 h-5"></div>
+                </div>
+
+                <div class="card p-3 border-l-4 border-l-red-700">
+                    <h3 class="title-font font-bold text-red-900 mb-2 flex justify-between">
+                        <span><i class="fas fa-skull"></i> COMBAT</span>
+                        <button onclick="resetCombat()" class="text-[10px] font-normal text-gray-500 underline">Reset</button>
+                    </h3>
+                    <div class="flex gap-2 text-sm mb-2">
+                        <input id="enemyName" placeholder="Nom Ennemi" class="flex-1 p-1 border rounded">
+                        <input id="enemyPV" type="number" placeholder="PV" class="w-12 p-1 border rounded font-bold text-red-600">
+                        <input id="enemyDex" type="number" placeholder="Dex" class="w-10 p-1 border rounded text-blue-600">
+                    </div>
+                    <div class="mb-2">
+                         <select id="combatWeapon" class="w-full text-sm border p-1 rounded bg-gray-50"></select>
+                    </div>
+                    <button onclick="combatRound()" class="w-full bg-red-800 text-white py-2 rounded font-bold shadow mb-2">ATTAQUER (TOUR COMPLET)</button>
+                    <div id="combatLog" class="h-24 overflow-y-auto bg-gray-100 p-2 text-xs border rounded"></div>
+                </div>
+
+                <div class="card p-3">
+                    <h3 class="title-font font-bold mb-2 flex items-center gap-2"><i class="fas fa-scroll"></i> BESACE</h3>
+                    
+                    <div class="bg-blue-50 p-2 rounded border border-blue-200 mb-2">
+                        <label class="text-[10px] text-gray-500 uppercase font-bold">Objets détectés (Chapitre actuel)</label>
+                        <div class="flex gap-1 mt-1">
+                            <select id="contextItemSelect" class="flex-1 text-sm border p-1 rounded"></select>
+                            <button onclick="addContextItem()" class="bg-blue-800 text-white px-3 rounded text-sm">+</button>
+                        </div>
+                    </div>
+
+                    <details class="mb-2">
+                        <summary class="text-xs text-gray-500 cursor-pointer p-1 bg-gray-100 rounded font-bold">+ Créer Objet Personnalisé</summary>
+                        <div class="p-2 border mt-1 rounded bg-white space-y-2">
+                            <div>
+                                <label class="text-[10px] font-bold">Nom</label>
+                                <input id="cName" placeholder="Ex: Épée maudite" class="w-full text-xs p-1 border">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] font-bold">Catégorie</label>
+                                    <select id="cCat" class="w-full text-xs p-1 border">
+                                        <option value="weapon">Arme</option>
+                                        <option value="equip">Équipement</option>
+                                        <option value="conso">Consommable</option>
+                                        <option value="other">Autre</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold">Stat Affectée</label>
+                                    <select id="cStat" class="w-full text-xs p-1 border">
+                                        <option value="dmg">Dégâts (Arme)</option>
+                                        <option value="pv">Points de Vie</option>
+                                        <option value="dex">Dextérité</option>
+                                        <option value="chance">Chance</option>
+                                        <option value="none">Aucune</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <div class="flex-1">
+                                    <label class="text-[10px] font-bold">Valeur (+/-)</label>
+                                    <input id="cVal" type="number" placeholder="0" class="w-full text-xs p-1 border">
+                                </div>
+                                <div class="flex-1">
+                                    <label class="text-[10px] font-bold">Usages</label>
+                                    <select id="cUsesType" class="w-full text-xs p-1 border" onchange="toggleUseInput(this.value)">
+                                        <option value="-1">Illimité / Porté</option>
+                                        <option value="1">Usage Unique</option>
+                                        <option value="X">Définir nombre...</option>
+                                    </select>
+                                </div>
+                                <div class="w-12 hidden" id="cUsesNbDiv">
+                                    <label class="text-[10px] font-bold">Nb</label>
+                                    <input id="cUsesNb" type="number" value="3" class="w-full text-xs p-1 border">
+                                </div>
+                            </div>
+                            <button onclick="addCustomItem()" class="w-full bg-gray-200 text-xs py-1 font-bold">Ajouter à la besace</button>
+                        </div>
+                    </details>
+
+                    <ul id="inventoryList" class="space-y-2 pb-2"></ul>
+                </div>
+            </div>
+
+            <div id="tab-carte" class="tab-content hidden">
+                <div class="bg-white p-2 border-b flex justify-between items-center sticky top-[140px] z-20 shadow-sm">
+                    <div class="flex gap-1">
+                        <select id="mapSelector" onchange="changeMap(this.value)" class="text-xs border rounded w-32"></select>
+                        <button onclick="addMap()" class="text-green-600 bg-green-50 px-2 border border-green-200 rounded text-xs">+</button>
+                    </div>
+                    <div class="flex gap-1">
+                        <div class="flex border-r pr-2 mr-1 gap-1">
+                            <button onclick="setPen('black')" class="w-5 h-5 bg-black rounded-full border"></button>
+                            <button onclick="setPen('red')" class="w-5 h-5 bg-red-600 rounded-full border"></button>
+                            <button onclick="setPen('blue')" class="w-5 h-5 bg-blue-600 rounded-full border"></button>
+                        </div>
+                        <button onclick="setTool('eraser')" class="px-2 bg-gray-200 rounded text-xs"><i class="fas fa-eraser"></i></button>
+                        <button onclick="setTool('text')" class="px-2 bg-gray-200 rounded text-xs"><i class="fas fa-font"></i></button>
+                    </div>
+                </div>
+                <div id="mapContainer">
+                    <div class="compass"></div>
+                    <canvas id="drawingCanvas" width="2000" height="2000"></canvas>
+                </div>
+            </div>
+
+            <div id="tab-journal" class="tab-content hidden space-y-3">
+                <div class="card p-3">
+                    <h3 class="font-bold text-sm mb-2">Bloc-Notes Personnel</h3>
+                    <textarea id="persistentNotes" class="w-full text-sm border p-2 h-32 rounded mb-2 bg-yellow-50" placeholder="Vos notes sont sauvegardées ici..." onchange="saveNotes()"></textarea>
+                    <div class="flex gap-2">
+                        <input id="quickNote" class="flex-1 text-xs border p-1" placeholder="Note rapide pour l'historique...">
+                        <button onclick="addLogNote()" class="bg-gray-200 text-xs px-2 border">Ajouter au Log</button>
+                    </div>
+                </div>
+
+                <div class="card p-3">
+                    <h3 class="font-bold text-sm mb-2">Historique Complet</h3>
+                    <div id="historyLog" class="h-64 overflow-y-auto text-[11px] font-mono bg-white p-2 border mt-2 rounded leading-tight"></div>
+                </div>
+                
+                <div class="card p-3">
+                    <h3 class="font-bold text-sm mb-2">Checkpoints (Max 3)</h3>
+                    <div id="cpList" class="space-y-1"></div>
+                </div>
+
+                <div class="card p-3">
+                    <h3 class="font-bold text-sm mb-2">Ambiance (YouTube)</h3>
+                    <input type="text" onchange="loadYT(this.value)" placeholder="ID Playlist" class="w-full text-xs border p-1 mb-1">
+                    <div id="ytContainer" class="aspect-video bg-black rounded"></div>
+                </div>
+
+                <button onclick="downloadSave()" class="w-full py-3 bg-gray-800 text-white font-bold rounded mb-4"><i class="fas fa-download"></i> SAUVEGARDER (FICHIER)</button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="modalDeath" class="modal">
+        <div class="bg-white p-6 rounded shadow-xl border-4 border-red-900 text-center max-w-sm w-full">
+            <h2 class="text-3xl font-bold text-red-900 mb-2 title-font">DESTIN FUNESTE</h2>
+            <div id="deathContent" class="space-y-2 mt-4"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- DONNEES ---
+        const ITEMS_DB = [
+            // TOME 1
+            {t:1, src:[7], name:"Potion de soin", type:"heal", val:5, uses:1, desc:"Redonne 5 PV."},
+            {t:1, src:[16], name:"Collier de charisme", type:"equip_chance", val:2, uses:-1, desc:"+2 Chance (Porté)."},
+            {t:1, src:[20], name:"Fiole de Laurier", type:"none", val:0, uses:1, desc:"+5 Dex (24h)."},
+            {t:1, src:[24,228,240], name:"Torche neuve", type:"none", val:0, uses:-1, desc:"Éclaire les lieux sombres."},
+            {t:1, src:[76,82,237,295], name:"Cristal", type:"dmg", val:50, uses:-1, desc:"Arme spéciale Dragon/Sage."},
+            {t:1, src:[82,237,295], name:"Arc et carquois", type:"dmg", val:0, uses:-1, desc:"Arme à distance."},
+            {t:1, src:[177], name:"Épée courte (+1)", type:"dmg", val:1, uses:-1, desc:"Salle d'armes."},
+            {t:1, src:[169], name:"Épée courte (+2)", type:"dmg", val:2, uses:-1, desc:"Camp Gobelin."},
+            {t:1, src:[133,269], name:"Pendentif rainure", type:"none", val:0, uses:-1, desc:"Donné par le Sage."},
+            {t:1, src:[333], name:"Boule rouge", type:"none", val:0, uses:-1, desc:"Mécanisme cartographie."},
+            {t:1, src:[343], name:"Boule verte", type:"none", val:0, uses:-1, desc:"Mécanisme salle vide."},
+            {t:1, src:[238], name:"Bourse en cuir", type:"gold", val:25, uses:1, desc:"Contient 25 boulons."},
+            {t:1, src:[209], name:"Bague 2ème chance", type:"none", val:0, uses:-1, desc:"Relance dés 1x/combat."},
+            {t:1, src:[340], name:"Clé rouillée", type:"none", val:0, uses:-1, desc:"Ouvre grille labyrinthe."},
+            {t:1, src:[287], name:"Bracelet de force", type:"equip_dex", val:2, uses:-1, desc:"+2 Dex (Porté)."},
+            {t:1, src:[334], name:"Bague de vitalité", type:"equip_pv", val:2, uses:-1, desc:"+2 PV Max/Actuels (Porté)."},
+            // TOME 2 & 3 (Idem versions précédentes, base conservée)
+            {t:2, src:[3,6,124], name:"Champignon poils longs", type:"none", val:0, uses:1, desc:"Objet de quête."},
+            {t:2, src:[24], name:"Lettre pliée", type:"none", val:0, uses:1, desc:"Message codé de Tess."},
+            {t:2, src:[102], name:"Pomme verte", type:"heal", val:2, uses:1, desc:"+2 PV."},
+            {t:2, src:[47,212], name:"Potion de soin pâle", type:"heal", val:3, uses:1, desc:"+3 PV."},
+            {t:2, src:[120,135], name:"Souris morte", type:"none", val:0, uses:1, desc:"Richesse de geôle."},
+            {t:2, src:[130,248], name:"Pomme rouge", type:"heal", val:2, uses:1, desc:"+2 PV."},
+            {t:2, src:[335], name:"Mélange potions", type:"none", val:0, uses:1, desc:"Ingrédient craft."},
+            {t:2, src:[181], name:"Bague 2ème chance", type:"none", val:0, uses:-1, desc:"Relance dés."},
+            {t:2, src:[272], name:"Reçu cheval", type:"none", val:0, uses:1, desc:"Preuve de dépôt."},
+            {t:2, src:[215], name:"Ceinture Paco Tille", type:"gold", val:5, uses:-1, desc:"Vaut 5 boulons."},
+            {t:2, src:[50,130,142,183,300], name:"Champignon orange", type:"heal", val:1, uses:1, desc:"+1 PV."},
+            {t:3, src:[8], name:"Clé du coffre", type:"none", val:0, uses:-1, desc:"Nain Vil Requin."},
+            {t:3, src:[219,232], name:"Gros Livre", type:"none", val:0, uses:-1, desc:"Déclenche dalles."},
+            {t:3, src:[236,328], name:"Tige de métal", type:"none", val:0, uses:-1, desc:"Levier."},
+            {t:3, src:[272], name:"Poudre d'Éveil", type:"none", val:0, uses:-1, desc:"Poudre bleue."},
+            {t:3, src:[304], name:"Potion d'Éveil", type:"none", val:0, uses:1, desc:"Sortir de la boucle."},
+            {t:3, src:[53], name:"Bague d'ancrage", type:"equip_chance", val:1, uses:-1, desc:"+1 Chance. Annule 1 blessure/Tome."},
+            {t:3, src:[53], name:"Fragment carapace", type:"none", val:0, uses:-1, desc:"Reine Scarabée."},
+            {t:3, src:[70], name:"Clé en bronze", type:"none", val:0, uses:-1, desc:"Donnée par le Gardien."},
+            {t:3, src:[89], name:"Clé Soleil", type:"none", val:0, uses:-1, desc:"Tête de soleil."},
+            {t:3, src:[91], name:"Potion confusion", type:"dmg", val:5, uses:1, desc:"-5 PV Adversaire."},
+            {t:3, src:[104], name:"Médaillon gravé", type:"none", val:0, uses:-1, desc:"Pour les perdus."},
+            {t:3, src:[349], name:"Œil de Nivélis", type:"none", val:0, uses:-1, desc:"Bille bleue."},
+            {t:3, src:[192], name:"Anneau des échos", type:"none", val:0, uses:-1, desc:"Rejouer une scène."},
+            {t:3, src:[313], name:"Clé dorée", type:"none", val:0, uses:-1, desc:"Sur le Gardien."},
+            {t:3, src:[234], name:"Clé cuivre", type:"none", val:0, uses:-1, desc:"Sous le masque."},
+            {t:3, src:[296], name:"Clé en bois", type:"none", val:0, uses:-1, desc:"Porte atelier."},
+            {t:3, src:[308], name:"Clé argentée", type:"none", val:0, uses:-1, desc:"Volée au Gardien."}
+        ];
+
+        let state = {
+            hero: { name: "", pv: 0, pvMax: 0, dex: 7, chance: 0, talent: "Instinct", gold: 0 },
+            inventory: [],
+            tome: 1,
+            chapter: 1,
+            mode: "Simplifié",
+            checkpoints: [],
+            history: [],
+            notes: "",
+            maps: {"Plan Principal": ""},
+            currentMap: "Plan Principal"
+        };
+
+        // --- INIT ---
+        function startGame() {
+            const h = state.hero;
+            h.name = document.getElementById('setupName').value || "Aventurier";
+            state.mode = document.getElementById('setupMode').value;
+            h.talent = document.getElementById('setupTalent').value;
+            
+            const d1 = Math.floor(Math.random()*6)+1;
+            const d2 = Math.floor(Math.random()*6)+1;
+            h.pvMax = (d1+d2)*4; h.pv = h.pvMax;
+            h.chance = Math.floor(Math.random()*6)+1;
+            h.dex = 7; h.gold = 0;
+
+            addItem("Besace", "none", 0, -1, "Contenant principal");
+            addItem("Bourse", "none", 0, -1, "Argent");
+
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
+            
+            log(`AVENTURE COMMENCÉE (${state.mode}). PV:${h.pv} Dex:7 Chance:${h.chance}`);
+            createCheckpoint();
+            changeTome(1); initMap(); updateUI();
+        }
+
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('.nav-tab').forEach(e => e.classList.remove('active'));
+            if(id=='tab-aventure') document.querySelectorAll('.nav-tab')[0].classList.add('active');
+            if(id=='tab-carte') document.querySelectorAll('.nav-tab')[1].classList.add('active');
+            if(id=='tab-journal') document.querySelectorAll('.nav-tab')[2].classList.add('active');
+        }
+
+        // --- NAVIGATION ---
+        function changeTome(val) {
+            const v = val || parseInt(document.getElementById('tomeSelect').value);
+            state.tome = v;
+            document.getElementById('tomeSelect').value = v;
+            const b = document.body; b.className="";
+            if(v===1) b.classList.add('theme-t1'); if(v===2) b.classList.add('theme-t2');
+            if(v===3) b.classList.add('theme-t3'); if(v===4) b.classList.add('theme-ext');
+            log(`Passage au Tome ${v}`); updateContextList();
+        }
+
+        function validateChapter() {
+            const c = document.getElementById('chapterInput').value;
+            goToChapter(c);
+            const status = document.getElementById('chapStatus');
+            status.classList.add('fade-in');
+            setTimeout(() => status.classList.remove('fade-in'), 2000);
+        }
+
+        function goToChapter(c) { 
+            state.chapter = parseInt(c); 
+            log(`Déplacement: Chapitre ${c}`); updateContextList(); 
+        }
+
+        // --- STATS ---
+        function modStat(stat, val) {
+            const h = state.hero;
+            if(stat === 'pv') { 
+                h.pv += val; if(h.pv>h.pvMax) h.pv=h.pvMax; if(h.pv<0) h.pv=0; 
+                log(`Santé: ${val>0?'+':''}${val} (Actuel: ${h.pv})`); checkDeath();
+            }
+            else if(stat === 'pvMax') { h.pvMax += val; log(`PV MAX modifiés: ${val>0?'+':''}${val}`); }
+            else if(stat === 'dex') { h.dex += val; log(`Dextérité modifiée: ${val>0?'+':''}${val}`); }
+            else if(stat === 'chance') { h.chance += val; log(`Chance modifiée: ${val>0?'+':''}${val}`); }
+            updateUI();
+        }
+        function addTalent() { 
+            const t=prompt("Talent:"); 
+            if(t) {state.hero.talent+=`, ${t}`; log(`Nouveau Talent appris: ${t}`); updateUI();} 
+        }
+        function updateGold(input) {
+            const old = parseInt(state.hero.gold); const neo = parseInt(input.value);
+            const diff = neo - old;
+            if(diff !== 0) { state.hero.gold = neo; log(`Boulons: ${diff>0?'+':''}${diff} (Total: ${neo})`); }
+        }
+
+        // --- INVENTAIRE & CREATION PERSO ---
+        function toggleUseInput(val) { document.getElementById('cUsesNbDiv').classList.toggle('hidden', val !== 'X'); }
+        function addCustomItem() {
+            const name = document.getElementById('cName').value;
+            const cat = document.getElementById('cCat').value;
+            const stat = document.getElementById('cStat').value;
+            const val = parseInt(document.getElementById('cVal').value) || 0;
+            const useType = document.getElementById('cUsesType').value;
+            
+            if(!name) return;
+            let internal = "none";
+            if(cat === 'weapon') internal = 'dmg';
+            else if(cat === 'conso' && stat === 'pv') internal = 'heal';
+            else if(cat === 'equip') {
+                if(stat === 'dex') internal = 'equip_dex'; if(stat === 'chance') internal = 'equip_chance'; if(stat === 'pv') internal = 'equip_pv';
+            }
+            let uses = -1;
+            if(useType === '1') uses = 1;
+            if(useType === 'X') uses = parseInt(document.getElementById('cUsesNb').value) || 1;
+            
+            let desc = `${cat.toUpperCase()}. `;
+            if(stat !== 'none') desc += `${stat.toUpperCase()} ${val>0?'+':''}${val}. `;
+            addItem(name, internal, val, uses, desc);
+        }
+
+        function updateContextList() {
+            const s = document.getElementById('contextItemSelect'); s.innerHTML = "";
+            const matches = ITEMS_DB.filter(i => i.t === state.tome && i.src.includes(state.chapter));
+            if(matches.length === 0) { const o=document.createElement('option'); o.text="-- Aucun détecté --"; s.add(o); }
+            matches.forEach(i => {
+                const o = document.createElement('option'); o.value = JSON.stringify(i); o.text = i.name; s.add(o);
+            });
+        }
+        function addContextItem() {
+            const val = document.getElementById('contextItemSelect').value;
+            if(!val || !val.includes('{')) return;
+            const t = JSON.parse(val);
+            addItem(t.name, t.type, t.val, t.uses, t.desc);
+        }
+        function addItem(name, type, val, uses, desc) {
+            if(type === 'gold') {
+                state.hero.gold = parseInt(state.hero.gold) + val;
+                log(`Trouvé ${val} boulons`); updateUI(); return;
+            }
+            state.inventory.push({ id: Date.now(), name, type, val, uses, desc: desc || "", equipped: false });
+            log(`Ajouté: ${name}`); updateUI();
+        }
+        function useItem(id) {
+            const idx = state.inventory.findIndex(i=>i.id===id);
+            const item = state.inventory[idx];
+            if(item.type === 'heal') { modStat('pv', item.val); log(`Consommé: ${item.name} (+${item.val} PV)`); } 
+            else { log(`Utilisé: ${item.name}`); }
+            if(item.uses > 0) {
+                item.uses--; if(item.uses === 0) { state.inventory.splice(idx,1); log(`${item.name} épuisé.`); }
+            }
+            updateUI();
+        }
+        function toggleEquip(id) {
+            const item = state.inventory.find(i=>i.id===id);
+            if(!item) return;
+            item.equipped = !item.equipped;
+            const m = item.equipped ? 1 : -1;
+            log(`${item.equipped?'Équipé':'Retiré'}: ${item.name}`);
+            if(item.type === 'equip_dex') state.hero.dex += (item.val*m);
+            if(item.type === 'equip_pv') { state.hero.pvMax += (item.val*m); state.hero.pv += (item.val*m); }
+            if(item.type === 'equip_chance') state.hero.chance += (item.val*m);
+            updateUI();
+        }
+        function trashItem(id) {
+            if(confirm("Jeter ?")) {
+                const item = state.inventory.find(i=>i.id===id);
+                if(item.equipped) toggleEquip(id);
+                state.inventory = state.inventory.filter(i=>i.id !== id);
+                log(`Jeté: ${item.name}`); updateUI();
+            }
+        }
+        function renderInventory() {
+            const l = document.getElementById('inventoryList');
+            const ws = document.getElementById('combatWeapon');
+            l.innerHTML = ""; ws.innerHTML = '<option value="0">Mains nues</option>';
+            state.inventory.forEach(i => {
+                if(i.type === 'dmg') { const opt = document.createElement('option'); opt.value = i.val; opt.text = `${i.name} (+${i.val})`; ws.add(opt); }
+                const li = document.createElement('li');
+                li.className = "flex justify-between items-center bg-gray-50 p-2 rounded border";
+                let btn = "";
+                if(i.type === 'heal' || (i.type === 'none' && i.uses > 0)) {
+                    btn = `<button onclick="useItem(${i.id})" class="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded mr-2 border border-green-200">UTILISER</button>`;
+                } else if (i.type.startsWith('equip')) {
+                    const txt = i.equipped ? "RETIRER" : "ÉQUIPER";
+                    const cls = i.equipped ? "bg-blue-600 text-white" : "bg-gray-200";
+                    btn = `<button onclick="toggleEquip(${i.id})" class="text-[10px] ${cls} px-2 py-1 rounded mr-2">${txt}</button>`;
+                }
+                const usesTxt = i.uses > 0 ? `(x${i.uses})` : (i.uses===-1?"(∞)":"");
+                li.innerHTML = `
+                    <div class="flex-1 ${i.equipped?'font-bold text-blue-800':''}">
+                        <div>${i.name} <span class="text-xs text-gray-500">${usesTxt}</span></div>
+                        <div class="text-[10px] text-gray-400 italic">${i.desc}</div>
+                    </div>
+                    <div class="flex items-center">${btn}<i onclick="trashItem(${i.id})" class="fas fa-trash text-red-300 cursor-pointer ml-1"></i></div>
+                `;
+                l.appendChild(li);
+            });
+        }
+
+        // --- CHECKPOINTS INTELLIGENTS ---
+        function createCheckpoint() {
+            const currentCPs = state.checkpoints || []; // Get current list
+            if(currentCPs.length >= 3) currentCPs.shift(); // Remove oldest
+            
+            // On sauvegarde l'état complet du héros/inv
+            const snapshot = JSON.stringify(state);
+            
+            currentCPs.push({ 
+                date: new Date().toLocaleTimeString(), 
+                chap: state.chapter, 
+                data: snapshot 
+            });
+            
+            state.checkpoints = currentCPs; // Update current state list
+            log("Système: Checkpoint créé.");
+            renderCPList();
+        }
+
+        function loadCP(idx) {
+            const cp = state.checkpoints[idx];
+            const loadedState = JSON.parse(cp.data);
+
+            // 1. On sauvegarde ce qui est "Meta" (ne doit pas être écrasé)
+            const keptMaps = state.maps;
+            const keptHistory = state.history;
+            const keptCPs = state.checkpoints;
+
+            // 2. On écrase le reste (Héros, Inventaire, Tome, Chapitre)
+            state = loadedState;
+
+            // 3. On restaure le Meta
+            state.maps = keptMaps;
+            state.history = keptHistory;
+            state.checkpoints = keptCPs;
+
+            // 4. On notifie
+            document.getElementById('modalDeath').style.display='none';
+            log(`--- RETOUR TEMPOREL (CHECKPOINT CHARGÉ: Chap ${state.chapter}) ---`);
+            changeTome(state.tome); 
+            initMap(); 
+            updateUI(); 
+            alert("Checkpoint chargé (Cartes et Historique conservés).");
+        }
+
+        function renderCPList() {
+            const d = document.getElementById('cpList'); d.innerHTML = "";
+            (state.checkpoints || []).forEach((cp, i) => {
+                d.innerHTML += `<div class="flex justify-between bg-gray-50 p-1 border text-xs"><span>Chap ${cp.chap} (${cp.date})</span> <button onclick="loadCP(${i})" class="text-blue-600 font-bold">CHARGER</button></div>`;
+            });
+        }
+
+        // --- LOGIQUE JEU ---
+        let diceRes=0;
+        function rollDiceVisual(n) {
+            let tot=0; const con=document.getElementById('diceVisual'); con.innerHTML="";
+            for(let i=0; i<n; i++) {
+                let r=Math.floor(Math.random()*6)+1; tot+=r;
+                con.innerHTML+=`<div class="w-8 h-8 bg-white border flex items-center justify-center font-bold shadow rounded">${r}</div>`;
+            }
+            diceRes=tot; document.getElementById('diceTotal').innerText="Total: "+tot;
+            log(`Dés (${n}d6): Résultat ${tot}`);
+            document.getElementById('lkUp').disabled = state.hero.chance<=0;
+            document.getElementById('lkDn').disabled = state.hero.chance<=0;
+        }
+        function useLuck(m) { 
+            if(state.hero.chance>0){
+                state.hero.chance--; diceRes+=m; document.getElementById('diceTotal').innerText="Total: "+diceRes; 
+                log(`Chance: ${m>0?'+1':'-1'} au dé -> ${diceRes}`); updateUI();
+            } 
+        }
+
+        function combatRound() {
+            const logDiv = document.getElementById('combatLog');
+            const eName = document.getElementById('enemyName').value || "Ennemi";
+            let ePV = parseInt(document.getElementById('enemyPV').value) || 0;
+            const eDex = parseInt(document.getElementById('enemyDex').value) || 7;
+            const bonus = parseInt(document.getElementById('combatWeapon').value);
+
+            if(ePV <= 0) return;
+
+            const rollH = Math.floor(Math.random()*6)+1 + Math.floor(Math.random()*6)+1;
+            let msg = `<div class="mb-1"><strong>Héros:</strong> `;
+            if(rollH <= state.hero.dex) {
+                const dmg = 1 + Math.floor(Math.random()*6)+1 + bonus; ePV -= dmg; 
+                msg += `<span class="text-green-700">Touche</span> (${rollH}) -> -${dmg} PV</div>`;
+                log(`Combat: Touché ${eName} pour ${dmg} dégâts.`);
+            } else { 
+                msg += `<span class="text-red-400">Rate</span> (${rollH})</div>`; 
+                log(`Combat: Raté ${eName}.`);
+            }
+
+            if(ePV > 0) {
+                const rollE = Math.floor(Math.random()*6)+1 + Math.floor(Math.random()*6)+1;
+                msg += `<div class="mb-1"><strong>${eName}:</strong> `;
+                if(rollE <= eDex) {
+                    const dmgE = Math.floor(Math.random()*6)+1; state.hero.pv -= dmgE; if(state.hero.pv<0) state.hero.pv=0;
+                    msg += `<span class="text-red-700">Touche</span> -> -${dmgE} PV</div>`;
+                    log(`Combat: ${eName} vous touche (-${dmgE} PV).`); checkDeath();
+                } else { 
+                    msg += `<span class="text-blue-400">Rate</span></div>`; 
+                    log(`Combat: ${eName} vous rate.`);
+                }
+            } else { 
+                msg += `<div class="text-green-800 font-bold">VICTOIRE !</div>`; ePV=0; 
+                log(`Combat: Victoire contre ${eName} !`);
+            }
+            msg += `<hr>`; logDiv.innerHTML = msg + logDiv.innerHTML;
+            document.getElementById('enemyPV').value = ePV; updateUI();
+        }
+        function resetCombat() { document.getElementById('combatLog').innerHTML=""; document.getElementById('enemyPV').value=""; }
+        function checkDeath() {
+            if(state.hero.pv === 0) {
+                log("MORT DU HÉROS.");
+                const m = document.getElementById('modalDeath'); const c = document.getElementById('deathContent'); m.style.display = 'flex';
+                let html = "<p>Votre aventure est terminée.</p>";
+                if(state.mode==='Simplifié' && state.checkpoints.length>0) {
+                    state.checkpoints.forEach((cp, idx) => {
+                        html += `<button onclick="loadCP(${idx})" class="block w-full bg-blue-100 p-2 mt-1 rounded text-left text-xs">Chap ${cp.chap} (${cp.date})</button>`;
+                    });
+                } else { html += `<button onclick="location.reload()" class="bg-gray-800 text-white p-2 rounded mt-4 w-full">Recommencer</button>`; }
+                c.innerHTML = html;
+            }
+        }
+
+        // --- UTILS & UI ---
+        function saveNotes() { state.notes = document.getElementById('persistentNotes').value; }
+        function addLogNote() { const t = document.getElementById('quickNote').value; if(t) { log(`NOTE: ${t}`); document.getElementById('quickNote').value=""; } }
+        function downloadSave() { state.maps[state.currentMap] = canvas.toDataURL(); const blob = new Blob([JSON.stringify(state)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `save_${state.hero.name}.json`; a.click(); }
+        function loadFromFile(inp) {
+            const f = inp.files[0]; const r = new FileReader();
+            r.onload = (e) => {
+                state = JSON.parse(e.target.result);
+                document.getElementById('setup-screen').classList.add('hidden');
+                document.getElementById('game-ui').classList.remove('hidden');
+                changeTome(state.tome); initMap(); updateUI(); renderHistory();
+                log("Système: Fichier de sauvegarde chargé.");
+            };
+            r.readAsText(f);
+        }
+
+        // Map
+        let canvas, ctx, isDr=false, cColor="black", cTool="pen";
+        function initMap() {
+            canvas = document.getElementById('drawingCanvas'); ctx = canvas.getContext('2d');
+            canvas.addEventListener('mousedown', start); canvas.addEventListener('touchstart', start);
+            canvas.addEventListener('mousemove', draw); canvas.addEventListener('touchmove', draw);
+            canvas.addEventListener('mouseup', stop); canvas.addEventListener('touchend', stop);
+            loadMapImg();
+        }
+        function start(e) { if(cTool === 'text') { const p = pos(e); const t = prompt("Texte:"); if(t) { ctx.font="14px Arial"; ctx.fillStyle=cColor; ctx.fillText(t,p.x,p.y); } return; } isDr = true; ctx.beginPath(); const p = pos(e); ctx.moveTo(p.x, p.y); }
+        function draw(e) { if(!isDr) return; e.preventDefault(); const p = pos(e); ctx.lineWidth = cTool==='eraser'?20:2; ctx.globalCompositeOperation = cTool==='eraser'?'destination-out':'source-over'; ctx.strokeStyle = cColor; ctx.lineTo(p.x, p.y); ctx.stroke(); }
+        function stop() { if(isDr){isDr=false; state.maps[state.currentMap]=canvas.toDataURL();} }
+        function pos(e) { const r=canvas.getBoundingClientRect(); const x=e.clientX||e.touches[0].clientX; const y=e.clientY||e.touches[0].clientY; return {x:x-r.left, y:y-r.top}; }
+        function setPen(c) { cColor=c; cTool='pen'; } function setTool(t) { cTool=t; }
+        function addMap() { const n=prompt("Nom:"); if(n) { state.maps[state.currentMap]=canvas.toDataURL(); state.maps[n]=""; state.currentMap=n; ctx.clearRect(0,0,2000,2000); updateMapSel(); } }
+        function changeMap(n) { state.maps[state.currentMap]=canvas.toDataURL(); state.currentMap=n; ctx.clearRect(0,0,2000,2000); loadMapImg(); }
+        function updateMapSel() { const s=document.getElementById('mapSelector'); s.innerHTML=""; Object.keys(state.maps).forEach(k=>{const o=document.createElement('option'); o.text=k; s.add(o);}); s.value=state.currentMap; }
+        function loadMapImg() { const d=state.maps[state.currentMap]; if(d) { const i=new Image(); i.onload=()=>ctx.drawImage(i,0,0); i.src=d; } else ctx.clearRect(0,0,2000,2000); }
+
+        function updateUI() {
+            const h = state.hero;
+            document.getElementById('pvText').innerText = `${h.pv}/${h.pvMax}`;
+            document.getElementById('pvBar').style.width = (h.pv/h.pvMax*100)+"%";
+            document.getElementById('chanceText').innerText = h.chance;
+            document.getElementById('chanceBar').style.width = (h.chance/12*100)+"%";
+            document.getElementById('dexDisplay').innerText = h.dex;
+            document.getElementById('talentDisplay').innerText = h.talent;
+            document.getElementById('goldDisplay').value = h.gold;
+            document.getElementById('chapterInput').value = state.chapter;
+            document.getElementById('persistentNotes').value = state.notes || "";
+            
+            // Force Show Checkpoint Btn if simplified
+            const qs = document.getElementById('quickSaveArea');
+            if(state.mode === 'Simplifié') qs.classList.remove('hidden');
+            else qs.classList.add('hidden');
+
+            renderInventory(); renderCPList();
+        }
+        function log(m) { state.history.unshift(`[T${state.tome}|C${state.chapter}] ${m}`); renderHistory(); }
+        function renderHistory() { document.getElementById('historyLog').innerHTML=state.history.join('<br>'); }
+        function loadYT(id) { document.getElementById('ytContainer').innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/videoseries?list=${id.replace('list=','')}" frameborder="0" allowfullscreen></iframe>`; }
+    </script>
+</body>
+</html>
