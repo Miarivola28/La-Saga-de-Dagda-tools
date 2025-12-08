@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Saga de Dagda - Icon Edition</title>
+    <title>La Saga de Dagda - Gold Compact</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=EB+Garamond:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -21,7 +21,7 @@
             background-color: var(--bg);
             color: var(--text);
             transition: background 0.5s ease;
-            padding-top: 130px; /* Réduit car header plus fin */
+            padding-top: 110px; /* RÉDUIT pour remonter le contenu */
             padding-bottom: 30px;
             font-size: 1.1rem;
         }
@@ -41,31 +41,32 @@
         #main-header {
             position: fixed; top: 0; left: 0; width: 100%; z-index: 50;
             background-color: var(--primary); color: #f3e5ab;
-            border-bottom: 4px solid rgba(0,0,0,0.2);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: background 0.5s;
+            border-bottom: 3px solid rgba(0,0,0,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.6); transition: background 0.5s;
         }
         .saga-title {
-            text-align: center; font-size: 1.2rem; 
-            text-shadow: 2px 2px 0 #000;
-            letter-spacing: 1px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
-            background: rgba(0,0,0,0.2);
+            text-align: center; font-size: 1.1rem; 
+            color: #FFD700; /* OR */
+            text-shadow: 1px 1px 0 #000;
+            letter-spacing: 1px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.3);
         }
 
         /* --- NAVIGATION ICONES --- */
         .nav-tab {
             flex: 1; 
             text-align: center; 
-            padding: 12px 0; /* Padding vertical confortable */
+            padding: 8px 0; /* Padding réduit */
             cursor: pointer;
-            border-bottom: 4px solid transparent; 
-            opacity: 0.6; 
+            border-bottom: 3px solid transparent; 
+            opacity: 0.7; 
             transition: 0.3s;
         }
         .nav-tab i {
-            font-size: 1.4rem; /* Icônes plus grosses */
+            font-size: 1.2rem; /* Icônes légèrement réduites */
             display: block;
         }
-        .nav-tab.active { opacity: 1; border-bottom-color: #f3e5ab; background: rgba(255,255,255,0.15); color: #fff; transform: translateY(-2px); }
+        .nav-tab.active { opacity: 1; border-bottom-color: #FFD700; background: rgba(255,255,255,0.1); color: #fff; }
 
         /* --- UI ELEMENTS --- */
         .stat-btn { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,0.2); }
@@ -85,7 +86,7 @@
         /* --- CARTE --- */
         #mapContainer {
             width: 100%; height: 50vh; 
-            overflow: auto; /* Scroll natif */
+            overflow: auto; 
             border: 4px double var(--primary); background: #fffdf5; position: relative;
             touch-action: pan-x pan-y;
         }
@@ -116,7 +117,7 @@
     <header id="main-header">
         <div class="saga-title">LA SAGA DE DAGDA</div>
         
-        <div class="flex justify-between items-center p-2 px-3 gap-2">
+        <div class="flex justify-between items-center p-1 px-3 gap-2">
             <select id="tomeSelect" onchange="changeTome()" class="bg-black/30 border border-[#f3e5ab] rounded text-xs p-1 text-[#f3e5ab] truncate flex-1 font-serif">
                 <option value="1">Tome 1 : La Harpe des quatre saisons</option>
                 <option value="2">Tome 2 : La Confrérie de Nuada</option>
@@ -128,7 +129,7 @@
                 <span class="text-xs font-bold uppercase ml-1 text-[#f3e5ab]">Chap.</span>
                 <input type="number" id="chapterInput" class="w-12 text-center rounded text-black font-bold p-0.5 text-sm" value="1">
                 <button onclick="validateChapter()" class="bg-[#f3e5ab] hover:bg-white text-black rounded px-2 py-0.5 text-xs">
-                    <i class="fas fa-chevron-right"></i> ALLER
+                    <i class="fas fa-chevron-right"></i>
                 </button>
                 <span id="chapStatus" class="fade-text">OK</span>
             </div>
@@ -300,7 +301,7 @@
                                 <div class="flex-1"><label class="text-[10px] font-bold">Usages</label><select id="cUsesType" class="w-full text-xs p-1 border" onchange="toggleUseInput(this.value)"><option value="-1">Illimité</option><option value="1">Unique</option><option value="X">Définir...</option></select></div>
                                 <div class="w-12 hidden" id="cUsesNbDiv"><label class="text-[10px] font-bold">Nb</label><input id="cUsesNb" type="number" value="3" class="w-full text-xs p-1 border"></div>
                             </div>
-                            <button onclick="addCustomItem()" class="w-full bg-gray-300 text-xs py-2 font-bold mt-1 border border-gray-400 rounded">AJOUTER</button>
+                            <button onclick="addCustomItem()" class="w-full bg-gray-300 text-xs py-2 font-bold mt-1 border border-gray-400 rounded">AJOUTER À LA BESACE</button>
                         </div>
                     </details>
                     <ul id="inventoryList" class="space-y-2 pb-2"></ul>
@@ -418,7 +419,7 @@
             {t:1, src:[340], name:"Clé rouillée", type:"none", val:0, uses:-1, desc:"Ouvre grille labyrinthe."},
             {t:1, src:[287], name:"Bracelet de force", type:"equip_dex", val:2, uses:-1, desc:"+2 Dex (Porté)."},
             {t:1, src:[334], name:"Bague de vitalité", type:"equip_pv", val:2, uses:-1, desc:"+2 PV Max/Actuels (Porté)."},
-            // Autres tomes inclus (simplifié ici, mais présent dans la logique)
+            // Autres tomes
             {t:2, src:[3,6,124], name:"Champignon poils longs", type:"none", val:0, uses:1, desc:"Objet de quête."},
             {t:2, src:[24], name:"Lettre pliée", type:"none", val:0, uses:1, desc:"Message codé de Tess."},
             {t:2, src:[102], name:"Pomme verte", type:"heal", val:2, uses:1, desc:"+2 PV."},
@@ -497,22 +498,16 @@
         function loadSpotify(input) {
             if (!input) return;
             let embedUrl = "";
-
-            // Nettoyage et transformation en lien Embed
             if (input.includes("open.spotify.com")) {
-                const cleanUrl = input.split('?')[0]; // Retire les trackers
-                // Transforme open.spotify.com en lien embed
+                const cleanUrl = input.split('?')[0]; 
                 embedUrl = cleanUrl.replace("open.spotify.com", "open.spotify.com/embed");
             } 
             else if (!input.includes("/")) {
-                // Si juste un ID, on suppose que c'est une playlist
                 embedUrl = `https://open.spotify.com/embed/playlist/${input}`;
             }
             else {
-                // Cas générique ou liens déjà embed
                 embedUrl = input; 
             }
-
             const c = document.getElementById('spotifyEmbedContainer');
             c.innerHTML = `<iframe style="border-radius:12px" src="${embedUrl}" width="100%" height="100%" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
         }
@@ -543,10 +538,7 @@
             if(state.tome===2)document.body.classList.add('theme-t2'); 
             if(state.tome===3)document.body.classList.add('theme-t3'); 
             if(state.tome===4)document.body.classList.add('theme-ext'); 
-            
-            // Charge la playlist du tome
             loadSpotify(TOME_PLAYLISTS[state.tome]);
-            
             updateContextList(); 
         }
 
@@ -563,11 +555,9 @@
         function trashItem(id) { if(confirm("Jeter ?")){const it=state.inventory.find(i=>i.id===id); if(it.equipped)toggleEquip(id); state.inventory=state.inventory.filter(i=>i.id!==id); updateUI();} }
         function renderInventory() { const l=document.getElementById('inventoryList'); const w=document.getElementById('combatWeapon'); l.innerHTML=""; w.innerHTML='<option value="0">Mains nues</option>'; state.inventory.forEach(i=>{ if(i.type==='dmg'){const o=document.createElement('option');o.value=i.val;o.text=`${i.name} (+${i.val})`;w.add(o);} const li=document.createElement('li'); li.className="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-300"; let b=""; if(i.type==='heal'||(i.type==='none'&&i.uses>0))b=`<button onclick="useItem(${i.id})" class="text-[10px] bg-green-100 text-green-800 px-2 py-1 rounded border border-green-200 uppercase font-bold">Utiliser</button>`; else if(i.type.startsWith('equip'))b=`<button onclick="toggleEquip(${i.id})" class="text-[10px] ${i.equipped?'bg-blue-800 text-white':'bg-gray-200 text-black'} px-2 py-1 rounded mr-2 uppercase font-bold border border-gray-400">${i.equipped?'RETIRER':'ÉQUIPER'}</button>`; li.innerHTML=`<div class="flex-1 ${i.equipped?'font-bold text-blue-900':''}"><div class="font-serif text-lg">${i.name} <span class="text-xs text-gray-500 font-sans">${i.uses>0?'(x'+i.uses+')':(i.uses===-1?'(∞)':'')}</span></div><div class="text-[11px] text-gray-500 italic">${i.desc}</div></div><div class="flex items-center gap-1">${b}<i onclick="trashItem(${i.id})" class="fas fa-trash text-red-300 hover:text-red-600 cursor-pointer ml-1"></i></div>`; l.appendChild(li); }); }
         
-        // --- SAFE CHECKPOINTS (NO MEMORY LEAK) ---
         function createCheckpoint() { 
             const currentCPs = state.checkpoints || [];
             if(currentCPs.length >= 3) currentCPs.shift();
-            // Important: Don't save recursive checkpoints!
             const stateCopy = { ...state };
             stateCopy.checkpoints = []; 
             const snapshot = JSON.stringify(stateCopy);
@@ -580,16 +570,9 @@
         function loadCP(idx) { 
             try { 
                 const cp=state.checkpoints[idx]; 
-                // Restore Meta Data
-                const maps=state.maps; 
-                const hist=state.history; 
-                const cps=state.checkpoints; 
-                
+                const maps=state.maps; const hist=state.history; const cps=state.checkpoints; 
                 state=JSON.parse(cp.data); 
-                state.maps=maps; 
-                state.history=hist; 
-                state.checkpoints=cps; 
-                
+                state.maps=maps; state.history=hist; state.checkpoints=cps; 
                 document.getElementById('modalDeath').style.display='none'; 
                 changeTome(state.tome); initMap(); updateUI(); alert("Chargé."); 
             } catch(e){ console.error(e); alert("Erreur chargement CP"); } 
