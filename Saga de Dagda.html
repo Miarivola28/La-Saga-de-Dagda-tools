@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Saga de Dagda - Compagnon</title>
+    <title>La Saga de Dagda - Spotify Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=EB+Garamond:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -128,6 +128,7 @@
             <div class="nav-tab active" onclick="switchTab('tab-aventure')"><i class="fas fa-scroll"></i> Aventure</div>
             <div class="nav-tab" onclick="switchTab('tab-carte')"><i class="fas fa-map-marked-alt"></i> Carte</div>
             <div class="nav-tab" onclick="switchTab('tab-journal')"><i class="fas fa-book-open"></i> Journal</div>
+            <div class="nav-tab" onclick="switchTab('tab-ambiance')"><i class="fas fa-music"></i> Ambiance</div>
         </div>
     </header>
 
@@ -142,10 +143,6 @@
                     <option value="Narratif">Mode Narratif</option>
                     <option value="Mortel">Mode Mortel</option>
                 </select>
-                <div class="text-xs text-gray-500 italic mt-1">
-                    <i class="fas fa-info-circle"></i> <b>Simplifié:</b> 3 sauvegardes autorisées. <b>Narratif:</b> Pour l'histoire. <b>Mortel:</b> Une seule vie.
-                </div>
-
                 <select id="setupTalent" class="w-full p-2 border border-gray-400 rounded bg-[#fffdf5]">
                     <option value="Instinct">Instinct (Intuition)</option>
                     <option value="Herbologie">Herbologie (Soin)</option>
@@ -155,8 +152,6 @@
                     <option value="Doigts Agiles">Doigts Agiles (Vol/Mécanisme)</option>
                     <option value="Empratique">Empratique (Émotions)</option>
                 </select>
-                <div class="text-center"><button onclick="showInfo('talents')" class="text-blue-800 underline text-xs">Voir le détail des Talents</button></div>
-
                 <button onclick="startGame()" class="w-full bg-[#2c1810] text-[#f3e5ab] p-3 rounded font-bold text-lg border-2 border-[#f3e5ab] shadow-lg">COMMENCER L'AVENTURE</button>
                 <div class="text-center text-sm mt-2">- OU -</div>
                 <label class="block w-full text-center p-2 bg-gray-200 rounded cursor-pointer border border-gray-400 hover:bg-gray-300">
@@ -332,7 +327,6 @@
                     <button class="map-btn font-bold text-sm" onclick="changeZoom(-0.1)" style="grid-column: 2; grid-row: 2">🔍-</button>
                     <button class="map-btn" onclick="panMap(50, 0)" style="grid-column: 3; grid-row: 2">➡️</button>
                     <button class="map-btn" onclick="panMap(0, 50)" style="grid-column: 2; grid-row: 3">⬇️</button>
-                    
                     <button class="map-btn font-bold text-sm" onclick="changeZoom(0.1)" style="grid-column: 4; grid-row: 1/span 3; display: flex; align-items: center; justify-content: center;">🔍+</button>
                     <div class="text-[10px] text-white flex items-center justify-center font-sans" style="grid-column: 5; grid-row: 1/span 3; text-align:center;">Zoom<br><span id="zoomDisplay">100%</span></div>
                 </div>
@@ -340,25 +334,39 @@
 
             <div id="tab-journal" class="tab-content hidden space-y-3">
                 <div class="card p-3">
-                    <h3 class="font-bold text-sm mb-2"><i class="fas fa-feather-alt"></i> NOTES</h3>
-                    <textarea id="persistentNotes" class="w-full text-sm border p-2 h-40 rounded mb-2 bg-[#fffdf5] font-serif" placeholder="Notez ici vos indices..." onchange="saveNotes()"></textarea>
+                    <h3 class="font-bold text-sm mb-2"><i class="fas fa-feather-alt"></i> NOTES PERSONNELLES</h3>
+                    <textarea id="persistentNotes" class="w-full text-sm border p-2 h-40 rounded mb-2 bg-[#fffdf5] font-serif" placeholder="Notez ici vos indices, codes et réflexions..." onchange="saveNotes()"></textarea>
                     <div class="flex gap-2">
-                        <input id="quickNote" class="flex-1 text-xs border p-1 rounded font-serif" placeholder="Note rapide...">
-                        <button onclick="addLogNote()" class="bg-gray-200 text-xs px-2 border rounded font-bold">AJOUTER</button>
+                        <input id="quickNote" class="flex-1 text-xs border p-1 rounded font-serif" placeholder="Note rapide pour l'historique...">
+                        <button onclick="addLogNote()" class="bg-gray-200 text-xs px-2 border rounded font-bold">AJOUTER AU LOG</button>
                     </div>
                 </div>
 
                 <div class="card p-3">
                     <h3 class="font-bold text-sm mb-2"><i class="fas fa-history"></i> CHRONIQUE</h3>
-                    <div id="historyLog" class="h-48 overflow-y-auto text-sm font-serif bg-[#fffdf5] p-2 border border-gray-300 mt-2 rounded leading-snug text-gray-800"></div>
+                    <div id="historyLog" class="h-64 overflow-y-auto text-sm font-serif bg-[#fffdf5] p-2 border border-gray-300 mt-2 rounded leading-snug text-gray-800"></div>
                 </div>
                 
                 <div class="card p-3">
-                    <h3 class="font-bold text-sm mb-2"><i class="fas fa-save"></i> CHECKPOINTS</h3>
+                    <h3 class="font-bold text-sm mb-2"><i class="fas fa-save"></i> CHECKPOINTS (Max 3)</h3>
                     <div id="cpList" class="space-y-1"></div>
                 </div>
 
-                <button onclick="downloadSave()" class="w-full py-3 bg-[#2c1810] text-[#f3e5ab] font-bold rounded mb-4 border border-[#f3e5ab] shadow"><i class="fas fa-download"></i> TÉLÉCHARGER SAUVEGARDE</button>
+                <button onclick="downloadSave()" class="w-full py-3 bg-[#2c1810] text-[#f3e5ab] font-bold rounded mb-4 border border-[#f3e5ab] shadow"><i class="fas fa-download"></i> TÉLÉCHARGER SAUVEGARDE (.JSON)</button>
+            </div>
+
+            <div id="tab-ambiance" class="tab-content hidden space-y-3">
+                <div class="card p-4">
+                    <h3 class="title-font font-bold mb-3 flex items-center gap-2"><i class="fas fa-music"></i> LECTEUR SPOTIFY</h3>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="spotifyLinkInput" placeholder="Collez un lien Spotify (Playlist, Album...)" class="flex-1 text-sm border p-2 rounded">
+                        <button onclick="loadManualSpotify()" class="bg-[#1DB954] text-white font-bold px-4 rounded">Charger</button>
+                    </div>
+                    <div id="spotifyEmbedContainer" class="w-full h-[380px] bg-black rounded-xl overflow-hidden shadow-lg border border-gray-800">
+                        <div class="h-full flex items-center justify-center text-gray-500 text-xs">Chargement...</div>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-2 italic text-center">Le lecteur charge automatiquement la playlist officielle du Tome en cours.</p>
+                </div>
             </div>
 
         </div>
@@ -399,6 +407,7 @@
             {t:1, src:[340], name:"Clé rouillée", type:"none", val:0, uses:-1, desc:"Ouvre grille labyrinthe."},
             {t:1, src:[287], name:"Bracelet de force", type:"equip_dex", val:2, uses:-1, desc:"+2 Dex (Porté)."},
             {t:1, src:[334], name:"Bague de vitalité", type:"equip_pv", val:2, uses:-1, desc:"+2 PV Max/Actuels (Porté)."},
+            // Autres tomes inclus (simplifié ici, mais présent dans la logique)
             {t:2, src:[3,6,124], name:"Champignon poils longs", type:"none", val:0, uses:1, desc:"Objet de quête."},
             {t:2, src:[24], name:"Lettre pliée", type:"none", val:0, uses:1, desc:"Message codé de Tess."},
             {t:2, src:[102], name:"Pomme verte", type:"heal", val:2, uses:1, desc:"+2 PV."},
@@ -429,41 +438,22 @@
             {t:3, src:[308], name:"Clé argentée", type:"none", val:0, uses:-1, desc:"Volée au Gardien."}
         ];
 
-        // --- GUIDES DÉTAILLÉS (CONTENU ISSU DES RÈGLES) ---
-        const INFO_CONTENT = {
-            'stats': `<b>LES CARACTÉRISTIQUES</b><br><br>
-            <b>POINTS DE VIE (PV) :</b> Calculés en lançant 2 dés x 4. C'est votre santé. Si elle tombe à 0, vous êtes vaincu.<br>
-            <b>CHANCE :</b> Calculée avec 1 dé. Vous pouvez dépenser des points de CHANCE pour modifier le résultat d'un dé pendant l'aventure (ex: vous avez fait 3, il faut 5, vous dépensez 2 points de CHANCE).<br>
-            <b>DEXTÉRITÉ :</b> Fixée à 7 (pour les Apprentis). Essentielle pour les combats.`,
-            
-            'talents': `<b>LES TALENTS DE DAGDA</b><br><br>
-            <b>INSTINCT :</b> Laisser parler ses sens, court-circuiter la raison pour sentir la bonne décision.<br>
-            <b>HERBOLOGIE :</b> Connaissance des plantes et de leurs secrets (soins, magie naturelle).<br>
-            <b>DISCRÉTION :</b> Se faufiler sans être vu, être silencieux comme un fantôme.<br>
-            <b>PERSUASION :</b> L'art de convaincre n'importe qui de n'importe quoi.<br>
-            <b>OBSERVATION :</b> Voir ce qui compte vraiment, les détails cachés.<br>
-            <b>DOIGTS AGILES :</b> Virtuose des doigts (vol à la tire, sculpture, mécanique).<br>
-            <b>EMPRATIQUE :</b> Ressentir exactement ce que ressent une autre personne.`,
+        // --- PLAYLISTS SPOTIFY ---
+        const TOME_PLAYLISTS = {
+            1: "https://open.spotify.com/playlist/6gM5scyddmUknZfMGLRvPS?si=inev73RZSZuxO2TIjryYXQ",
+            2: "https://open.spotify.com/playlist/21SeYW4cjzU9hjRGs2DxwU?si=ghrIPa-RSM2ZO4iJWW6SiA",
+            3: "https://open.spotify.com/playlist/3IolZKhvmH42hsu79n2K3v?si=p6HQcBUARlipG_Xd1lGc_Q",
+            4: "https://open.spotify.com/playlist/1hJpJre4n8T7vaOLV4NCtc?si=LdSCdjkmTcax1Uctrmxilw"
+        };
 
-            'combat': `<b>LES COMBATS (Tour par Tour)</b><br><br>
-            <b>1. TOUCHER L'ENNEMI :</b> Jetez 2 dés. Si le total est <b>inférieur ou égal</b> à votre DEXTÉRITÉ, vous touchez.<br>
-            <b>2. DÉGÂTS :</b> Si vous touchez : 1 PV (automatique) + Résultat d'un dé (1d6) + Bonus de l'arme.<br>
-            <b>3. RIPOSTE :</b> L'ennemi attaque ensuite (l'application gère ses dés automatiquement).<br><br>
-            Le combat continue jusqu'à ce que les PV de l'un tombent à 0.`,
-            
-            'besace': `<b>INVENTAIRE (BESACE)</b><br><br>
-            Vous portez une besace en bandoulière. Tous les objets trouvés doivent être notés ici.<br>
-            • Certains objets sont des <b>Armes</b> (bonus de dégâts).<br>
-            • D'autres sont des <b>Consommables</b> (potions, nourriture).<br>
-            • Les objets spécifiques au chapitre en cours apparaissent automatiquement en haut de la liste.`,
-            
-            'carte': `<b>CROQUIS & PLANS</b><br><br>
-            Dessinez ici les plans des lieux que vous explorez.<br>
-            • <b>Échelle :</b> Considérez qu'un point/case correspond à environ <b>2 mètres</b>.<br>
-            • Utilisez les flèches pour déplacer votre feuille de papier virtuelle.`,
-            
-            'des': `<b>LANCER DE DÉS</b><br><br>
-            Utilisez ce module pour tous les jets hors combat (tests de Chance, jeux, hasard...).`
+        // --- INFO RULES ---
+        const INFO_CONTENT = {
+            'stats': `<b>LES CARACTÉRISTIQUES</b><br><br><b>POINTS DE VIE (PV) :</b> Calculés en lançant 2 dés x 4. C'est votre santé. Si elle tombe à 0, vous êtes vaincu.<br><b>CHANCE :</b> Calculée avec 1 dé. Vous pouvez dépenser des points de CHANCE pour modifier le résultat d'un dé pendant l'aventure.<br><b>DEXTÉRITÉ :</b> Fixée à 7. Essentielle pour les combats.`,
+            'talents': `<b>LES TALENTS</b><br><b>INSTINCT :</b> Intuition.<br><b>HERBOLOGIE :</b> Plantes et soins.<br><b>DISCRÉTION :</b> Furtivité.<br><b>PERSUASION :</b> Convaincre.<br><b>OBSERVATION :</b> Détails cachés.<br><b>DOIGTS AGILES :</b> Vol/Mécanique.<br><b>EMPRATIQUE :</b> Émotions.`,
+            'combat': `<b>LES COMBATS</b><br>1. <b>TOUCHER :</b> Jetez 2 dés. Si Total ≤ Dextérité, vous touchez.<br>2. <b>DÉGÂTS :</b> 1 PV (auto) + 1 dé + Bonus Arme.<br>3. <b>RIPOSTE :</b> L'ennemi attaque.`,
+            'besace': `<b>INVENTAIRE</b><br>Vous portez une besace. Les objets du chapitre actuel s'affichent en haut.`,
+            'carte': `<b>CROQUIS</b><br>Dessinez vos plans ici. 1 case = 2 mètres.`,
+            'des': `<b>DÉS</b><br>Pour tous les jets hors combat.`
         };
 
         let state = {
@@ -487,7 +477,36 @@
             } catch(e) { alert("Erreur démarrage: " + e.message); console.error(e); }
         }
 
-        // --- CORE FUNCTIONS ---
+        // --- SPOTIFY ---
+        function loadManualSpotify() {
+            const url = document.getElementById('spotifyLinkInput').value;
+            loadSpotify(url);
+        }
+
+        function loadSpotify(input) {
+            if (!input) return;
+            let embedUrl = "";
+
+            // Nettoyage et transformation en lien Embed
+            if (input.includes("open.spotify.com")) {
+                const cleanUrl = input.split('?')[0]; // Retire les trackers
+                // Transforme open.spotify.com en lien embed
+                embedUrl = cleanUrl.replace("open.spotify.com", "open.spotify.com/embed");
+            } 
+            else if (!input.includes("/")) {
+                // Si juste un ID, on suppose que c'est une playlist
+                embedUrl = `https://open.spotify.com/embed/playlist/${input}`;
+            }
+            else {
+                // Cas générique ou liens déjà embed
+                embedUrl = input; 
+            }
+
+            const c = document.getElementById('spotifyEmbedContainer');
+            c.innerHTML = `<iframe style="border-radius:12px" src="${embedUrl}" width="100%" height="100%" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+        }
+
+        // --- NAVIGATION ---
         function goToChapter(c) {
             state.chapter = parseInt(c);
             log(`Déplacement: Chapitre ${c}`);
@@ -499,8 +518,27 @@
         function panMap(dx, dy) { document.getElementById('mapContainer').scrollBy({ left: dx, top: dy, behavior: 'smooth' }); }
         
         function validateChapter() { const c=document.getElementById('chapterInput').value; goToChapter(c); const s=document.getElementById('chapStatus'); s.classList.add('fade-in'); setTimeout(()=>s.classList.remove('fade-in'),2000); }
-        function switchTab(id) { document.querySelectorAll('.tab-content').forEach(e=>e.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); document.querySelectorAll('.nav-tab').forEach(e=>e.classList.remove('active')); if(id=='tab-aventure')document.querySelectorAll('.nav-tab')[0].classList.add('active'); if(id=='tab-carte')document.querySelectorAll('.nav-tab')[1].classList.add('active'); if(id=='tab-journal')document.querySelectorAll('.nav-tab')[2].classList.add('active'); }
-        function changeTome(v) { state.tome=v||parseInt(document.getElementById('tomeSelect').value); document.body.className=""; if(state.tome===1)document.body.classList.add('theme-t1'); if(state.tome===2)document.body.classList.add('theme-t2'); if(state.tome===3)document.body.classList.add('theme-t3'); if(state.tome===4)document.body.classList.add('theme-ext'); updateContextList(); }
+        function switchTab(id) { document.querySelectorAll('.tab-content').forEach(e=>e.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); document.querySelectorAll('.nav-tab').forEach(e=>e.classList.remove('active')); 
+            if(id=='tab-aventure')document.querySelectorAll('.nav-tab')[0].classList.add('active'); 
+            if(id=='tab-carte')document.querySelectorAll('.nav-tab')[1].classList.add('active'); 
+            if(id=='tab-journal')document.querySelectorAll('.nav-tab')[2].classList.add('active'); 
+            if(id=='tab-ambiance')document.querySelectorAll('.nav-tab')[3].classList.add('active'); 
+        }
+        
+        function changeTome(v) { 
+            state.tome=v||parseInt(document.getElementById('tomeSelect').value); 
+            document.body.className=""; 
+            if(state.tome===1)document.body.classList.add('theme-t1'); 
+            if(state.tome===2)document.body.classList.add('theme-t2'); 
+            if(state.tome===3)document.body.classList.add('theme-t3'); 
+            if(state.tome===4)document.body.classList.add('theme-ext'); 
+            
+            // Charge la playlist du tome
+            loadSpotify(TOME_PLAYLISTS[state.tome]);
+            
+            updateContextList(); 
+        }
+
         function modStat(s,v) { if(s==='pv'){state.hero.pv+=v; if(state.hero.pv>state.hero.pvMax)state.hero.pv=state.hero.pvMax; if(state.hero.pv<0)state.hero.pv=0; checkDeath();} else if(s==='pvMax')state.hero.pvMax+=v; else if(s==='dex')state.hero.dex+=v; else if(s==='chance')state.hero.chance+=v; updateUI(); }
         function addTalent() { const t=prompt("Talent:"); if(t){state.hero.talent+=`, ${t}`; updateUI();} }
         function updateGold(i) { state.hero.gold=parseInt(i.value); }
@@ -514,13 +552,11 @@
         function trashItem(id) { if(confirm("Jeter ?")){const it=state.inventory.find(i=>i.id===id); if(it.equipped)toggleEquip(id); state.inventory=state.inventory.filter(i=>i.id!==id); updateUI();} }
         function renderInventory() { const l=document.getElementById('inventoryList'); const w=document.getElementById('combatWeapon'); l.innerHTML=""; w.innerHTML='<option value="0">Mains nues</option>'; state.inventory.forEach(i=>{ if(i.type==='dmg'){const o=document.createElement('option');o.value=i.val;o.text=`${i.name} (+${i.val})`;w.add(o);} const li=document.createElement('li'); li.className="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-300"; let b=""; if(i.type==='heal'||(i.type==='none'&&i.uses>0))b=`<button onclick="useItem(${i.id})" class="text-[10px] bg-green-100 text-green-800 px-2 py-1 rounded border border-green-200 uppercase font-bold">Utiliser</button>`; else if(i.type.startsWith('equip'))b=`<button onclick="toggleEquip(${i.id})" class="text-[10px] ${i.equipped?'bg-blue-800 text-white':'bg-gray-200 text-black'} px-2 py-1 rounded mr-2 uppercase font-bold border border-gray-400">${i.equipped?'RETIRER':'ÉQUIPER'}</button>`; li.innerHTML=`<div class="flex-1 ${i.equipped?'font-bold text-blue-900':''}"><div class="font-serif text-lg">${i.name} <span class="text-xs text-gray-500 font-sans">${i.uses>0?'(x'+i.uses+')':(i.uses===-1?'(∞)':'')}</span></div><div class="text-[11px] text-gray-500 italic">${i.desc}</div></div><div class="flex items-center gap-1">${b}<i onclick="trashItem(${i.id})" class="fas fa-trash text-red-300 hover:text-red-600 cursor-pointer ml-1"></i></div>`; l.appendChild(li); }); }
         
-        // --- SAFE CHECKPOINTS (NO MEMORY LEAK) ---
         function createCheckpoint() { 
             const currentCPs = state.checkpoints || [];
             if(currentCPs.length >= 3) currentCPs.shift();
-            // CLEAN COPY
             const stateCopy = { ...state };
-            stateCopy.checkpoints = []; // Don't nest checkpoints
+            stateCopy.checkpoints = []; 
             const snapshot = JSON.stringify(stateCopy);
             currentCPs.push({ date: new Date().toLocaleTimeString(), chap: state.chapter, data: snapshot });
             state.checkpoints = currentCPs; 
@@ -563,7 +599,7 @@
         function updateMapSel() { const s=document.getElementById('mapSelector'); s.innerHTML=""; Object.keys(state.maps).forEach(k=>{const o=document.createElement('option');o.text=k;s.add(o);}); s.value=state.currentMap; }
         function loadMapImg() { const d=state.maps[state.currentMap]; if(d){const i=new Image(); i.onload=()=>ctx.drawImage(i,0,0); i.src=d;}else ctx.clearRect(0,0,2000,2000); }
         function panMap(x,y) { document.getElementById('mapContainer').scrollBy({left:x,top:y,behavior:'smooth'}); }
-        function changeZoom(d) { zoom+=d; if(zoom<0.5)zoom=0.5; if(zoom>3)zoom=3; document.getElementById('drawingCanvas').style.transform=`scale(${zoom})`; }
+        function changeZoom(d) { zoom+=d; if(zoom<0.5)zoom=0.5; if(zoom>3)zoom=3; document.getElementById('drawingCanvas').style.transform=`scale(${zoom})`; document.getElementById('zoomDisplay').innerText=Math.round(zoom*100)+"%"; }
 
         function updateUI() {
             const h = state.hero;
