@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Saga de Dagda - Hybrid Edition</title>
+    <title>La Saga de Dagda - Compagnon</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=EB+Garamond:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -29,11 +29,12 @@
         h1, h2, h3, button, .title-font, .nav-tab, select, input { font-family: 'MedievalSharp', cursive; }
         
         .card {
-            background: rgba(255, 255, 255, 0.8); 
+            background: rgba(255, 255, 255, 0.9); 
             border: 2px solid var(--primary);
             border-radius: 4px; 
             box-shadow: 3px 3px 0px rgba(0,0,0,0.1);
             margin-bottom: 12px;
+            position: relative;
         }
 
         /* --- HEADER --- */
@@ -62,13 +63,21 @@
         .btn-plus { background: #dcfce7; color: #166534; }
         .prog-bar-bg { background: #d1d5db; height: 16px; border-radius: 8px; overflow: hidden; border: 1px solid #4b5563; }
         .prog-bar-fill { height: 100%; transition: width 0.3s; }
+        
+        .info-btn {
+            width: 20px; height: 20px; border-radius: 50%; background: #e5e7eb; color: #374151;
+            font-family: sans-serif; font-weight: bold; font-size: 12px;
+            display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer; border: 1px solid #9ca3af; margin-left: 6px; vertical-align: middle;
+        }
+        .info-btn:hover { background: #fff; border-color: var(--primary); color: var(--primary); }
 
-        /* --- CARTE (CORRIGÉE: SCROLL + BOUTONS) --- */
+        /* --- CARTE --- */
         #mapContainer {
             width: 100%; height: 50vh; 
-            overflow: auto; /* Scroll natif rétabli ! */
+            overflow: auto; /* Scroll natif */
             border: 4px double var(--primary); background: #fffdf5; position: relative;
-            touch-action: pan-x pan-y; /* Permet le glissement */
+            touch-action: pan-x pan-y;
         }
         #drawingCanvas { 
             background-image: radial-gradient(#aaa 1px, transparent 1px); background-size: 20px 20px; 
@@ -86,7 +95,7 @@
             font-size: 1.2rem; padding: 5px; border-radius: 4px;
         }
 
-        /* --- MODALS & FADE --- */
+        /* --- MODALS --- */
         .fade-text { transition: opacity 1s; opacity: 0; font-weight: bold; color: #4ade80; margin-left: 5px; font-size: 14px; }
         .fade-in { opacity: 1; }
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: none; align-items: center; justify-content: center; }
@@ -133,15 +142,21 @@
                     <option value="Narratif">Mode Narratif</option>
                     <option value="Mortel">Mode Mortel</option>
                 </select>
+                <div class="text-xs text-gray-500 italic mt-1">
+                    <i class="fas fa-info-circle"></i> <b>Simplifié:</b> 3 sauvegardes autorisées. <b>Narratif:</b> Pour l'histoire. <b>Mortel:</b> Une seule vie.
+                </div>
+
                 <select id="setupTalent" class="w-full p-2 border border-gray-400 rounded bg-[#fffdf5]">
-                    <option value="Instinct">Instinct</option>
-                    <option value="Herbologie">Herbologie</option>
-                    <option value="Discrétion">Discrétion</option>
-                    <option value="Persuasion">Persuasion</option>
-                    <option value="Observation">Observation</option>
-                    <option value="Doigts Agiles">Doigts Agiles</option>
-                    <option value="Empratique">Empratique</option>
+                    <option value="Instinct">Instinct (Intuition)</option>
+                    <option value="Herbologie">Herbologie (Soin)</option>
+                    <option value="Discrétion">Discrétion (Furtivité)</option>
+                    <option value="Persuasion">Persuasion (Parole)</option>
+                    <option value="Observation">Observation (Détails)</option>
+                    <option value="Doigts Agiles">Doigts Agiles (Vol/Mécanisme)</option>
+                    <option value="Empratique">Empratique (Émotions)</option>
                 </select>
+                <div class="text-center"><button onclick="showInfo('talents')" class="text-blue-800 underline text-xs">Voir le détail des Talents</button></div>
+
                 <button onclick="startGame()" class="w-full bg-[#2c1810] text-[#f3e5ab] p-3 rounded font-bold text-lg border-2 border-[#f3e5ab] shadow-lg">COMMENCER L'AVENTURE</button>
                 <div class="text-center text-sm mt-2">- OU -</div>
                 <label class="block w-full text-center p-2 bg-gray-200 rounded cursor-pointer border border-gray-400 hover:bg-gray-300">
@@ -154,7 +169,6 @@
         <div id="game-ui" class="hidden">
 
             <div id="tab-aventure" class="tab-content block space-y-3">
-                
                 <div id="quickSaveArea" class="hidden mb-2">
                     <button onclick="createCheckpoint()" class="w-full py-2 bg-blue-100 text-blue-900 rounded border border-blue-400 font-bold text-sm shadow hover:bg-blue-200 transition">
                         <i class="fas fa-save"></i> SAUVEGARDE RAPIDE (CHECKPOINT)
@@ -162,6 +176,7 @@
                 </div>
 
                 <div class="card p-4">
+                    <h3 class="absolute top-2 right-2 text-xs text-gray-400"><button class="info-btn" onclick="showInfo('stats')">i</button></h3>
                     <div class="mb-4">
                         <div class="flex justify-between items-center mb-1">
                             <span class="text-sm font-bold flex items-center gap-1 text-red-800"><i class="fas fa-heart"></i> SANTÉ (PV)</span>
@@ -215,7 +230,9 @@
                 </div>
 
                 <div class="card p-3">
-                    <h3 class="text-sm font-bold text-gray-700 mb-2 border-b border-gray-300">🎲 LANCER DE DÉS</h3>
+                    <div class="flex justify-between border-b border-gray-300 mb-2">
+                        <h3 class="text-sm font-bold text-gray-700 flex items-center">🎲 LANCER DE DÉS <button onclick="showInfo('des')" class="info-btn">i</button></h3>
+                    </div>
                     <div class="flex items-center gap-4">
                         <div class="flex flex-col gap-1 w-1/3">
                             <button onclick="rollDiceVisual(1)" class="bg-gray-200 border border-gray-400 text-sm py-1 rounded shadow-sm">1 Dé</button>
@@ -237,8 +254,10 @@
 
                 <div class="card p-4 border-l-4 border-l-red-800 bg-red-50/50">
                     <h3 class="title-font text-lg font-bold text-red-900 mb-3 flex justify-between items-center">
-                        <span>⚔️ COMBAT</span>
-                        <button onclick="resetCombat()" class="text-xs font-normal text-gray-500 underline font-sans">Nouveau</button>
+                        <span class="flex items-center">⚔️ COMBAT <button onclick="showInfo('combat')" class="info-btn">i</button></span>
+                        <div class="flex gap-2 items-center">
+                            <button onclick="resetCombat()" class="text-xs font-normal text-gray-500 underline font-sans">Nouveau</button>
+                        </div>
                     </h3>
                     <div class="flex gap-2 text-sm mb-2">
                         <input id="enemyName" placeholder="Nom Ennemi" class="flex-1 p-1 border border-red-300 rounded bg-white">
@@ -253,8 +272,9 @@
                 </div>
 
                 <div class="card p-3">
-                    <h3 class="title-font font-bold mb-2 flex items-center gap-2"><i class="fas fa-shopping-bag"></i> BESACE</h3>
-                    
+                    <h3 class="title-font font-bold mb-2 flex items-center justify-between">
+                        <span class="flex items-center"><i class="fas fa-shopping-bag"></i> BESACE <button onclick="showInfo('besace')" class="info-btn">i</button></span>
+                    </h3>
                     <div class="bg-blue-50 p-2 rounded border border-blue-200 mb-2">
                         <label class="text-[10px] text-gray-500 uppercase font-bold font-sans">Objets détectés (Chapitre actuel)</label>
                         <div class="flex gap-1 mt-1">
@@ -262,57 +282,22 @@
                             <button onclick="addContextItem()" class="bg-blue-800 text-white px-3 rounded text-sm">+</button>
                         </div>
                     </div>
-
                     <details class="mb-2">
                         <summary class="text-xs text-gray-600 cursor-pointer p-1 bg-gray-200 rounded font-bold font-sans text-center">+ CRÉER OBJET</summary>
                         <div class="p-2 border mt-1 rounded bg-white space-y-2">
-                            <div>
-                                <label class="text-[10px] font-bold">Nom</label>
-                                <input id="cName" placeholder="Ex: Épée maudite" class="w-full text-xs p-1 border">
-                            </div>
+                            <div><label class="text-[10px] font-bold">Nom</label><input id="cName" placeholder="Ex: Épée maudite" class="w-full text-xs p-1 border"></div>
                             <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="text-[10px] font-bold">Catégorie</label>
-                                    <select id="cCat" class="w-full text-xs p-1 border">
-                                        <option value="weapon">Arme</option>
-                                        <option value="equip">Équipement</option>
-                                        <option value="conso">Consommable</option>
-                                        <option value="other">Autre</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-bold">Stat Affectée</label>
-                                    <select id="cStat" class="w-full text-xs p-1 border">
-                                        <option value="dmg">Dégâts (Arme)</option>
-                                        <option value="pv">Points de Vie</option>
-                                        <option value="dex">Dextérité</option>
-                                        <option value="chance">Chance</option>
-                                        <option value="none">Aucune</option>
-                                    </select>
-                                </div>
+                                <div><label class="text-[10px] font-bold">Catégorie</label><select id="cCat" class="w-full text-xs p-1 border"><option value="weapon">Arme</option><option value="equip">Équipement</option><option value="conso">Consommable</option><option value="other">Autre</option></select></div>
+                                <div><label class="text-[10px] font-bold">Stat</label><select id="cStat" class="w-full text-xs p-1 border"><option value="dmg">Dégâts</option><option value="pv">Points de Vie</option><option value="dex">Dextérité</option><option value="chance">Chance</option><option value="none">Aucune</option></select></div>
                             </div>
                             <div class="flex gap-2">
-                                <div class="flex-1">
-                                    <label class="text-[10px] font-bold">Valeur (+/-)</label>
-                                    <input id="cVal" type="number" placeholder="0" class="w-full text-xs p-1 border">
-                                </div>
-                                <div class="flex-1">
-                                    <label class="text-[10px] font-bold">Usages</label>
-                                    <select id="cUsesType" class="w-full text-xs p-1 border" onchange="toggleUseInput(this.value)">
-                                        <option value="-1">Illimité / Porté</option>
-                                        <option value="1">Usage Unique</option>
-                                        <option value="X">Définir nombre...</option>
-                                    </select>
-                                </div>
-                                <div class="w-12 hidden" id="cUsesNbDiv">
-                                    <label class="text-[10px] font-bold">Nb</label>
-                                    <input id="cUsesNb" type="number" value="3" class="w-full text-xs p-1 border">
-                                </div>
+                                <div class="flex-1"><label class="text-[10px] font-bold">Valeur</label><input id="cVal" type="number" placeholder="0" class="w-full text-xs p-1 border"></div>
+                                <div class="flex-1"><label class="text-[10px] font-bold">Usages</label><select id="cUsesType" class="w-full text-xs p-1 border" onchange="toggleUseInput(this.value)"><option value="-1">Illimité</option><option value="1">Unique</option><option value="X">Définir...</option></select></div>
+                                <div class="w-12 hidden" id="cUsesNbDiv"><label class="text-[10px] font-bold">Nb</label><input id="cUsesNb" type="number" value="3" class="w-full text-xs p-1 border"></div>
                             </div>
-                            <button onclick="addCustomItem()" class="w-full bg-gray-300 text-xs py-2 font-bold mt-1 border border-gray-400 rounded">AJOUTER À LA BESACE</button>
+                            <button onclick="addCustomItem()" class="w-full bg-gray-300 text-xs py-2 font-bold mt-1 border border-gray-400 rounded">AJOUTER</button>
                         </div>
                     </details>
-
                     <ul id="inventoryList" class="space-y-2 pb-2"></ul>
                 </div>
             </div>
@@ -325,13 +310,14 @@
                     </div>
                     <div class="flex gap-1 items-center">
                         <div class="flex border-r border-gray-300 pr-2 mr-1 gap-1">
-                            <button onclick="setPen('black')" class="w-6 h-6 bg-black rounded-full border-2 border-white shadow-sm" title="Noir"></button>
-                            <button onclick="setPen('#8b0000')" class="w-6 h-6 bg-red-800 rounded-full border-2 border-white shadow-sm" title="Rouge"></button>
-                            <button onclick="setPen('#1e3a8a')" class="w-6 h-6 bg-blue-800 rounded-full border-2 border-white shadow-sm" title="Bleu"></button>
+                            <button onclick="setPen('black')" class="w-6 h-6 bg-black rounded-full border-2 border-white shadow-sm"></button>
+                            <button onclick="setPen('#8b0000')" class="w-6 h-6 bg-red-800 rounded-full border-2 border-white shadow-sm"></button>
+                            <button onclick="setPen('#1e3a8a')" class="w-6 h-6 bg-blue-800 rounded-full border-2 border-white shadow-sm"></button>
                         </div>
                         <button onclick="setTool('pen')" id="btn-pen" class="px-2 py-1 bg-gray-200 rounded text-sm border border-gray-300"><i class="fas fa-pencil-alt"></i></button>
                         <button onclick="setTool('eraser')" id="btn-eraser" class="px-2 py-1 bg-gray-200 rounded text-sm border border-gray-300"><i class="fas fa-eraser"></i></button>
                         <button onclick="setTool('text')" id="btn-text" class="px-2 py-1 bg-gray-200 rounded text-sm border border-gray-300"><i class="fas fa-font"></i></button>
+                        <button onclick="showInfo('carte')" class="info-btn ml-2">i</button>
                     </div>
                 </div>
                 
@@ -341,11 +327,11 @@
                 </div>
 
                 <div class="map-controls">
-                    <button class="map-btn" onclick="panMap(0, 50)" style="grid-column: 2">⬆️</button>
-                    <button class="map-btn" onclick="panMap(50, 0)" style="grid-column: 1; grid-row: 2">⬅️</button>
+                    <button class="map-btn" onclick="panMap(0, -50)" style="grid-column: 2">⬆️</button>
+                    <button class="map-btn" onclick="panMap(-50, 0)" style="grid-column: 1; grid-row: 2">⬅️</button>
                     <button class="map-btn font-bold text-sm" onclick="changeZoom(-0.1)" style="grid-column: 2; grid-row: 2">🔍-</button>
-                    <button class="map-btn" onclick="panMap(-50, 0)" style="grid-column: 3; grid-row: 2">➡️</button>
-                    <button class="map-btn" onclick="panMap(0, -50)" style="grid-column: 2; grid-row: 3">⬇️</button>
+                    <button class="map-btn" onclick="panMap(50, 0)" style="grid-column: 3; grid-row: 2">➡️</button>
+                    <button class="map-btn" onclick="panMap(0, 50)" style="grid-column: 2; grid-row: 3">⬇️</button>
                     
                     <button class="map-btn font-bold text-sm" onclick="changeZoom(0.1)" style="grid-column: 4; grid-row: 1/span 3; display: flex; align-items: center; justify-content: center;">🔍+</button>
                     <div class="text-[10px] text-white flex items-center justify-center font-sans" style="grid-column: 5; grid-row: 1/span 3; text-align:center;">Zoom<br><span id="zoomDisplay">100%</span></div>
@@ -354,43 +340,49 @@
 
             <div id="tab-journal" class="tab-content hidden space-y-3">
                 <div class="card p-3">
-                    <h3 class="font-bold text-sm mb-2"><i class="fas fa-feather-alt"></i> NOTES PERSONNELLES</h3>
-                    <textarea id="persistentNotes" class="w-full text-sm border p-2 h-40 rounded mb-2 bg-[#fffdf5] font-serif" placeholder="Notez ici vos indices, codes et réflexions..." onchange="saveNotes()"></textarea>
+                    <h3 class="font-bold text-sm mb-2"><i class="fas fa-feather-alt"></i> NOTES</h3>
+                    <textarea id="persistentNotes" class="w-full text-sm border p-2 h-40 rounded mb-2 bg-[#fffdf5] font-serif" placeholder="Notez ici vos indices..." onchange="saveNotes()"></textarea>
                     <div class="flex gap-2">
-                        <input id="quickNote" class="flex-1 text-xs border p-1 rounded font-serif" placeholder="Note rapide pour l'historique...">
-                        <button onclick="addLogNote()" class="bg-gray-200 text-xs px-2 border rounded font-bold">AJOUTER AU LOG</button>
+                        <input id="quickNote" class="flex-1 text-xs border p-1 rounded font-serif" placeholder="Note rapide...">
+                        <button onclick="addLogNote()" class="bg-gray-200 text-xs px-2 border rounded font-bold">AJOUTER</button>
                     </div>
                 </div>
 
                 <div class="card p-3">
                     <h3 class="font-bold text-sm mb-2"><i class="fas fa-history"></i> CHRONIQUE</h3>
-                    <div id="historyLog" class="h-64 overflow-y-auto text-sm font-serif bg-[#fffdf5] p-2 border border-gray-300 mt-2 rounded leading-snug text-gray-800"></div>
+                    <div id="historyLog" class="h-48 overflow-y-auto text-sm font-serif bg-[#fffdf5] p-2 border border-gray-300 mt-2 rounded leading-snug text-gray-800"></div>
                 </div>
                 
                 <div class="card p-3">
-                    <h3 class="font-bold text-sm mb-2"><i class="fas fa-save"></i> CHECKPOINTS (Max 3)</h3>
+                    <h3 class="font-bold text-sm mb-2"><i class="fas fa-save"></i> CHECKPOINTS</h3>
                     <div id="cpList" class="space-y-1"></div>
                 </div>
 
-                <button onclick="downloadSave()" class="w-full py-3 bg-[#2c1810] text-[#f3e5ab] font-bold rounded mb-4 border border-[#f3e5ab] shadow"><i class="fas fa-download"></i> TÉLÉCHARGER SAUVEGARDE (.JSON)</button>
+                <button onclick="downloadSave()" class="w-full py-3 bg-[#2c1810] text-[#f3e5ab] font-bold rounded mb-4 border border-[#f3e5ab] shadow"><i class="fas fa-download"></i> TÉLÉCHARGER SAUVEGARDE</button>
             </div>
 
         </div>
 
     </div>
 
+    <div id="modalInfo" class="modal">
+        <div class="bg-[#fffdf5] p-5 rounded shadow-2xl border-4 border-[#2c1810] max-w-sm w-full max-h-[80vh] overflow-y-auto relative">
+            <button onclick="document.getElementById('modalInfo').style.display='none'" class="absolute top-2 right-2 font-bold text-xl text-red-900">×</button>
+            <h2 id="infoTitle" class="text-2xl font-bold mb-3 border-b border-black pb-1 title-font">RÈGLES</h2>
+            <div id="infoContent" class="text-sm font-serif leading-relaxed text-justify space-y-2"></div>
+        </div>
+    </div>
+
     <div id="modalDeath" class="modal">
         <div class="bg-[#fffdf5] p-6 rounded shadow-2xl border-4 border-red-900 text-center max-w-sm w-full relative">
             <h2 class="text-4xl font-bold text-red-900 mb-4 title-font" style="text-shadow: 1px 1px 0 #000;">COMBAT PERDU</h2>
-            <div id="deathContent" class="space-y-4 mt-4 text-sm font-serif">
-                </div>
+            <div id="deathContent" class="space-y-4 mt-4 text-sm font-serif"></div>
         </div>
     </div>
 
     <script>
         // --- DONNEES ---
         const ITEMS_DB = [
-            // TOME 1
             {t:1, src:[7], name:"Potion de soin", type:"heal", val:5, uses:1, desc:"Redonne 5 PV."},
             {t:1, src:[16], name:"Collier de charisme", type:"equip_chance", val:2, uses:-1, desc:"+2 Chance (Porté)."},
             {t:1, src:[20], name:"Fiole de Laurier", type:"none", val:0, uses:1, desc:"+5 Dex (24h)."},
@@ -407,7 +399,6 @@
             {t:1, src:[340], name:"Clé rouillée", type:"none", val:0, uses:-1, desc:"Ouvre grille labyrinthe."},
             {t:1, src:[287], name:"Bracelet de force", type:"equip_dex", val:2, uses:-1, desc:"+2 Dex (Porté)."},
             {t:1, src:[334], name:"Bague de vitalité", type:"equip_pv", val:2, uses:-1, desc:"+2 PV Max/Actuels (Porté)."},
-            // TOME 2 & 3 (Idem versions précédentes)
             {t:2, src:[3,6,124], name:"Champignon poils longs", type:"none", val:0, uses:1, desc:"Objet de quête."},
             {t:2, src:[24], name:"Lettre pliée", type:"none", val:0, uses:1, desc:"Message codé de Tess."},
             {t:2, src:[102], name:"Pomme verte", type:"heal", val:2, uses:1, desc:"+2 PV."},
@@ -438,423 +429,141 @@
             {t:3, src:[308], name:"Clé argentée", type:"none", val:0, uses:-1, desc:"Volée au Gardien."}
         ];
 
-        let state = {
-            hero: { name: "", pv: 0, pvMax: 0, dex: 7, chance: 0, talent: "Instinct", gold: 0 },
-            inventory: [],
-            tome: 1,
-            chapter: 1,
-            mode: "Simplifié",
-            checkpoints: [],
-            history: [],
-            notes: "",
-            maps: {"Plan Principal": ""},
-            currentMap: "Plan Principal"
+        // --- GUIDES DÉTAILLÉS (CONTENU ISSU DES RÈGLES) ---
+        const INFO_CONTENT = {
+            'stats': `<b>LES CARACTÉRISTIQUES</b><br><br>
+            <b>POINTS DE VIE (PV) :</b> Calculés en lançant 2 dés x 4. C'est votre santé. Si elle tombe à 0, vous êtes vaincu.<br>
+            <b>CHANCE :</b> Calculée avec 1 dé. Vous pouvez dépenser des points de CHANCE pour modifier le résultat d'un dé pendant l'aventure (ex: vous avez fait 3, il faut 5, vous dépensez 2 points de CHANCE).<br>
+            <b>DEXTÉRITÉ :</b> Fixée à 7 (pour les Apprentis). Essentielle pour les combats.`,
+            
+            'talents': `<b>LES TALENTS DE DAGDA</b><br><br>
+            <b>INSTINCT :</b> Laisser parler ses sens, court-circuiter la raison pour sentir la bonne décision.<br>
+            <b>HERBOLOGIE :</b> Connaissance des plantes et de leurs secrets (soins, magie naturelle).<br>
+            <b>DISCRÉTION :</b> Se faufiler sans être vu, être silencieux comme un fantôme.<br>
+            <b>PERSUASION :</b> L'art de convaincre n'importe qui de n'importe quoi.<br>
+            <b>OBSERVATION :</b> Voir ce qui compte vraiment, les détails cachés.<br>
+            <b>DOIGTS AGILES :</b> Virtuose des doigts (vol à la tire, sculpture, mécanique).<br>
+            <b>EMPRATIQUE :</b> Ressentir exactement ce que ressent une autre personne.`,
+
+            'combat': `<b>LES COMBATS (Tour par Tour)</b><br><br>
+            <b>1. TOUCHER L'ENNEMI :</b> Jetez 2 dés. Si le total est <b>inférieur ou égal</b> à votre DEXTÉRITÉ, vous touchez.<br>
+            <b>2. DÉGÂTS :</b> Si vous touchez : 1 PV (automatique) + Résultat d'un dé (1d6) + Bonus de l'arme.<br>
+            <b>3. RIPOSTE :</b> L'ennemi attaque ensuite (l'application gère ses dés automatiquement).<br><br>
+            Le combat continue jusqu'à ce que les PV de l'un tombent à 0.`,
+            
+            'besace': `<b>INVENTAIRE (BESACE)</b><br><br>
+            Vous portez une besace en bandoulière. Tous les objets trouvés doivent être notés ici.<br>
+            • Certains objets sont des <b>Armes</b> (bonus de dégâts).<br>
+            • D'autres sont des <b>Consommables</b> (potions, nourriture).<br>
+            • Les objets spécifiques au chapitre en cours apparaissent automatiquement en haut de la liste.`,
+            
+            'carte': `<b>CROQUIS & PLANS</b><br><br>
+            Dessinez ici les plans des lieux que vous explorez.<br>
+            • <b>Échelle :</b> Considérez qu'un point/case correspond à environ <b>2 mètres</b>.<br>
+            • Utilisez les flèches pour déplacer votre feuille de papier virtuelle.`,
+            
+            'des': `<b>LANCER DE DÉS</b><br><br>
+            Utilisez ce module pour tous les jets hors combat (tests de Chance, jeux, hasard...).`
         };
 
-        // --- INIT ---
+        let state = {
+            hero: { name: "", pv: 0, pvMax: 0, dex: 7, chance: 0, talent: "Instinct", gold: 0 },
+            inventory: [], tome: 1, chapter: 1, mode: "Simplifié", checkpoints: [], history: [], notes: "", maps: {"Plan Principal": ""}, currentMap: "Plan Principal"
+        };
+
         function startGame() {
-            const h = state.hero;
-            h.name = document.getElementById('setupName').value || "Aventurier";
-            state.mode = document.getElementById('setupMode').value;
-            h.talent = document.getElementById('setupTalent').value;
-            
-            const d1 = Math.floor(Math.random()*6)+1;
-            const d2 = Math.floor(Math.random()*6)+1;
-            h.pvMax = (d1+d2)*4; h.pv = h.pvMax;
-            h.chance = Math.floor(Math.random()*6)+1;
-            h.dex = 7; h.gold = 0;
-
-            addItem("Besace", "none", 0, -1, "Contenant principal");
-            addItem("Bourse", "none", 0, -1, "Argent");
-
-            document.getElementById('setup-screen').classList.add('hidden');
-            document.getElementById('game-ui').classList.remove('hidden');
-            
-            log(`AVENTURE COMMENCÉE (${state.mode}). PV:${h.pv} Dex:7 Chance:${h.chance}`);
-            createCheckpoint();
-            changeTome(1); initMap(); updateUI();
+            try {
+                const h = state.hero;
+                h.name = document.getElementById('setupName').value || "Aventurier";
+                state.mode = document.getElementById('setupMode').value;
+                h.talent = document.getElementById('setupTalent').value;
+                h.pvMax = (Math.floor(Math.random()*6)+1 + Math.floor(Math.random()*6)+1)*4; h.pv = h.pvMax;
+                h.chance = Math.floor(Math.random()*6)+1; h.dex = 7; h.gold = 0;
+                addItem("Besace", "none", 0, -1, "Contenant principal");
+                addItem("Bourse", "none", 0, -1, "Argent");
+                document.getElementById('setup-screen').classList.add('hidden');
+                document.getElementById('game-ui').classList.remove('hidden');
+                createCheckpoint(); changeTome(1); initMap(); updateUI();
+            } catch(e) { alert("Erreur démarrage: " + e.message); console.error(e); }
         }
 
-        function switchTab(id) {
-            document.querySelectorAll('.tab-content').forEach(e => e.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-            document.querySelectorAll('.nav-tab').forEach(e => e.classList.remove('active'));
-            if(id=='tab-aventure') document.querySelectorAll('.nav-tab')[0].classList.add('active');
-            if(id=='tab-carte') document.querySelectorAll('.nav-tab')[1].classList.add('active');
-            if(id=='tab-journal') document.querySelectorAll('.nav-tab')[2].classList.add('active');
+        // --- CORE FUNCTIONS ---
+        function goToChapter(c) {
+            state.chapter = parseInt(c);
+            log(`Déplacement: Chapitre ${c}`);
+            updateContextList(); 
         }
-
-        // --- NAVIGATION ---
-        function changeTome(val) {
-            const v = val || parseInt(document.getElementById('tomeSelect').value);
-            state.tome = v;
-            document.getElementById('tomeSelect').value = v;
-            const b = document.body; b.className="";
-            if(v===1) b.classList.add('theme-t1'); if(v===2) b.classList.add('theme-t2');
-            if(v===3) b.classList.add('theme-t3'); if(v===4) b.classList.add('theme-ext');
-            log(`Passage au Tome ${v}`); updateContextList();
+        function showInfo(topic) {
+            document.getElementById('infoTitle').innerText = topic.toUpperCase(); document.getElementById('infoContent').innerHTML = INFO_CONTENT[topic] || "Pas d'info."; document.getElementById('modalInfo').style.display = 'flex';
         }
-
-        function validateChapter() {
-            const c = document.getElementById('chapterInput').value;
-            goToChapter(c);
-            const status = document.getElementById('chapStatus');
-            status.classList.add('fade-in');
-            setTimeout(() => status.classList.remove('fade-in'), 2000);
-        }
-
-        function goToChapter(c) { 
-            state.chapter = parseInt(c); 
-            log(`Déplacement: Chapitre ${c}`); updateContextList(); 
-        }
-
-        // --- STATS ---
-        function modStat(stat, val) {
-            const h = state.hero;
-            if(stat === 'pv') { 
-                h.pv += val; if(h.pv>h.pvMax) h.pv=h.pvMax; if(h.pv<0) h.pv=0; 
-                log(`Santé: ${val>0?'+':''}${val} (Actuel: ${h.pv})`); checkDeath();
-            }
-            else if(stat === 'pvMax') { h.pvMax += val; log(`PV MAX modifiés: ${val>0?'+':''}${val}`); }
-            else if(stat === 'dex') { h.dex += val; log(`Dextérité modifiée: ${val>0?'+':''}${val}`); }
-            else if(stat === 'chance') { h.chance += val; log(`Chance modifiée: ${val>0?'+':''}${val}`); }
-            updateUI();
-        }
-        function addTalent() { 
-            const t=prompt("Talent:"); 
-            if(t) {state.hero.talent+=`, ${t}`; log(`Nouveau Talent appris: ${t}`); updateUI();} 
-        }
-        function updateGold(input) {
-            const old = parseInt(state.hero.gold); const neo = parseInt(input.value);
-            const diff = neo - old;
-            if(diff !== 0) { state.hero.gold = neo; log(`Boulons: ${diff>0?'+':''}${diff} (Total: ${neo})`); }
-        }
-
-        // --- INVENTAIRE ---
-        function toggleUseInput(val) { document.getElementById('cUsesNbDiv').classList.toggle('hidden', val !== 'X'); }
-        function addCustomItem() {
-            const name = document.getElementById('cName').value;
-            const cat = document.getElementById('cCat').value;
-            const stat = document.getElementById('cStat').value;
-            const val = parseInt(document.getElementById('cVal').value) || 0;
-            const useType = document.getElementById('cUsesType').value;
-            
-            if(!name) return;
-            let internal = "none";
-            if(cat === 'weapon') internal = 'dmg';
-            else if(cat === 'conso' && stat === 'pv') internal = 'heal';
-            else if(cat === 'equip') {
-                if(stat === 'dex') internal = 'equip_dex'; if(stat === 'chance') internal = 'equip_chance'; if(stat === 'pv') internal = 'equip_pv';
-            }
-            let uses = -1;
-            if(useType === '1') uses = 1;
-            if(useType === 'X') uses = parseInt(document.getElementById('cUsesNb').value) || 1;
-            
-            let desc = `${cat.toUpperCase()}. `;
-            if(stat !== 'none') desc += `${stat.toUpperCase()} ${val>0?'+':''}${val}. `;
-            addItem(name, internal, val, uses, desc);
-        }
-
-        function updateContextList() {
-            const s = document.getElementById('contextItemSelect'); s.innerHTML = "";
-            const matches = ITEMS_DB.filter(i => i.t === state.tome && i.src.includes(state.chapter));
-            if(matches.length === 0) { const o=document.createElement('option'); o.text="-- Aucun détecté --"; s.add(o); }
-            matches.forEach(i => {
-                const o = document.createElement('option'); o.value = JSON.stringify(i); o.text = i.name; s.add(o);
-            });
-        }
-        function addContextItem() {
-            const val = document.getElementById('contextItemSelect').value;
-            if(!val || !val.includes('{')) return;
-            const t = JSON.parse(val);
-            addItem(t.name, t.type, t.val, t.uses, t.desc);
-        }
-        function addItem(name, type, val, uses, desc) {
-            if(type === 'gold') {
-                state.hero.gold = parseInt(state.hero.gold) + val;
-                log(`Trouvé ${val} boulons`); updateUI(); return;
-            }
-            state.inventory.push({ id: Date.now(), name, type, val, uses, desc: desc || "", equipped: false });
-            log(`Ajouté: ${name}`); updateUI();
-        }
-        function useItem(id) {
-            const idx = state.inventory.findIndex(i=>i.id===id);
-            const item = state.inventory[idx];
-            if(item.type === 'heal') { modStat('pv', item.val); log(`Consommé: ${item.name} (+${item.val} PV)`); } 
-            else { log(`Utilisé: ${item.name}`); }
-            if(item.uses > 0) {
-                item.uses--; if(item.uses === 0) { state.inventory.splice(idx,1); log(`${item.name} épuisé.`); }
-            }
-            updateUI();
-        }
-        function toggleEquip(id) {
-            const item = state.inventory.find(i=>i.id===id);
-            if(!item) return;
-            item.equipped = !item.equipped;
-            const m = item.equipped ? 1 : -1;
-            log(`${item.equipped?'Équipé':'Retiré'}: ${item.name}`);
-            if(item.type === 'equip_dex') state.hero.dex += (item.val*m);
-            if(item.type === 'equip_pv') { state.hero.pvMax += (item.val*m); state.hero.pv += (item.val*m); }
-            if(item.type === 'equip_chance') state.hero.chance += (item.val*m);
-            updateUI();
-        }
-        function trashItem(id) {
-            if(confirm("Jeter ?")) {
-                const item = state.inventory.find(i=>i.id===id);
-                if(item.equipped) toggleEquip(id);
-                state.inventory = state.inventory.filter(i=>i.id !== id);
-                log(`Jeté: ${item.name}`); updateUI();
-            }
-        }
-        function renderInventory() {
-            const l = document.getElementById('inventoryList');
-            const ws = document.getElementById('combatWeapon');
-            l.innerHTML = ""; ws.innerHTML = '<option value="0">Mains nues</option>';
-            state.inventory.forEach(i => {
-                if(i.type === 'dmg') { const opt = document.createElement('option'); opt.value = i.val; opt.text = `${i.name} (+${i.val})`; ws.add(opt); }
-                const li = document.createElement('li');
-                li.className = "flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-300";
-                let btn = "";
-                if(i.type === 'heal' || (i.type === 'none' && i.uses > 0)) {
-                    btn = `<button onclick="useItem(${i.id})" class="text-[10px] bg-green-100 text-green-800 px-2 py-1 rounded mr-2 border border-green-200 uppercase font-bold">Utiliser</button>`;
-                } else if (i.type.startsWith('equip')) {
-                    const txt = i.equipped ? "RETIRER" : "ÉQUIPER";
-                    const cls = i.equipped ? "bg-blue-800 text-white" : "bg-gray-200 text-black";
-                    btn = `<button onclick="toggleEquip(${i.id})" class="text-[10px] ${cls} px-2 py-1 rounded mr-2 uppercase font-bold border border-gray-400">${txt}</button>`;
-                }
-                const usesTxt = i.uses > 0 ? `(x${i.uses})` : (i.uses===-1?"(∞)":"");
-                li.innerHTML = `
-                    <div class="flex-1 ${i.equipped?'font-bold text-blue-900':''}">
-                        <div class="font-serif text-lg">${i.name} <span class="text-xs text-gray-500 font-sans">${usesTxt}</span></div>
-                        <div class="text-[11px] text-gray-500 italic">${i.desc}</div>
-                    </div>
-                    <div class="flex items-center">${btn}<i onclick="trashItem(${i.id})" class="fas fa-trash text-red-300 hover:text-red-600 cursor-pointer ml-1"></i></div>
-                `;
-                l.appendChild(li);
-            });
-        }
-
-        // --- CHECKPOINTS & SAVE ---
-        function createCheckpoint() {
-            const currentCPs = state.checkpoints || []; 
-            if(currentCPs.length >= 3) currentCPs.shift(); 
-            const snapshot = JSON.stringify(state);
+        function panMap(dx, dy) { document.getElementById('mapContainer').scrollBy({ left: dx, top: dy, behavior: 'smooth' }); }
+        
+        function validateChapter() { const c=document.getElementById('chapterInput').value; goToChapter(c); const s=document.getElementById('chapStatus'); s.classList.add('fade-in'); setTimeout(()=>s.classList.remove('fade-in'),2000); }
+        function switchTab(id) { document.querySelectorAll('.tab-content').forEach(e=>e.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); document.querySelectorAll('.nav-tab').forEach(e=>e.classList.remove('active')); if(id=='tab-aventure')document.querySelectorAll('.nav-tab')[0].classList.add('active'); if(id=='tab-carte')document.querySelectorAll('.nav-tab')[1].classList.add('active'); if(id=='tab-journal')document.querySelectorAll('.nav-tab')[2].classList.add('active'); }
+        function changeTome(v) { state.tome=v||parseInt(document.getElementById('tomeSelect').value); document.body.className=""; if(state.tome===1)document.body.classList.add('theme-t1'); if(state.tome===2)document.body.classList.add('theme-t2'); if(state.tome===3)document.body.classList.add('theme-t3'); if(state.tome===4)document.body.classList.add('theme-ext'); updateContextList(); }
+        function modStat(s,v) { if(s==='pv'){state.hero.pv+=v; if(state.hero.pv>state.hero.pvMax)state.hero.pv=state.hero.pvMax; if(state.hero.pv<0)state.hero.pv=0; checkDeath();} else if(s==='pvMax')state.hero.pvMax+=v; else if(s==='dex')state.hero.dex+=v; else if(s==='chance')state.hero.chance+=v; updateUI(); }
+        function addTalent() { const t=prompt("Talent:"); if(t){state.hero.talent+=`, ${t}`; updateUI();} }
+        function updateGold(i) { state.hero.gold=parseInt(i.value); }
+        function toggleUseInput(v) { document.getElementById('cUsesNbDiv').classList.toggle('hidden', v!=='X'); }
+        function addCustomItem() { const n=document.getElementById('cName').value; if(n) addItem(n, document.getElementById('cType').value, parseInt(document.getElementById('cVal').value)||0, document.getElementById('cUsesType').value==='1'?1:(document.getElementById('cUsesType').value==='X'?parseInt(document.getElementById('cUsesNb').value):-1)); }
+        function updateContextList() { const s=document.getElementById('contextItemSelect'); s.innerHTML=""; const m=ITEMS_DB.filter(i=>i.t===state.tome && i.src.includes(state.chapter)); if(m.length===0){const o=document.createElement('option');o.text="-- Aucun --";s.add(o);} m.forEach(i=>{const o=document.createElement('option');o.value=JSON.stringify(i);o.text=i.name;s.add(o);}); }
+        function addContextItem() { const v=document.getElementById('contextItemSelect').value; if(v && v.includes('{')) {const t=JSON.parse(v); addItem(t.name,t.type,t.val,t.uses,t.desc);} }
+        function addItem(n,t,v,u,d) { if(t==='gold'){state.hero.gold+=v; updateUI(); return;} state.inventory.push({id:Date.now(),name:n,type:t,val:v,uses:u,desc:d||"",equipped:false}); log("Ajouté: "+n); updateUI(); }
+        function useItem(id) { const idx=state.inventory.findIndex(i=>i.id===id); if(idx>-1){const it=state.inventory[idx]; if(it.type==='heal')modStat('pv',it.val); if(it.uses>0){it.uses--; if(it.uses===0)state.inventory.splice(idx,1);} updateUI();} }
+        function toggleEquip(id) { const it=state.inventory.find(i=>i.id===id); if(it){it.equipped=!it.equipped; const m=it.equipped?1:-1; if(it.type==='equip_dex')state.hero.dex+=it.val*m; if(it.type==='equip_pv')state.hero.pvMax+=it.val*m; if(it.type==='equip_chance')state.hero.chance+=it.val*m; updateUI();} }
+        function trashItem(id) { if(confirm("Jeter ?")){const it=state.inventory.find(i=>i.id===id); if(it.equipped)toggleEquip(id); state.inventory=state.inventory.filter(i=>i.id!==id); updateUI();} }
+        function renderInventory() { const l=document.getElementById('inventoryList'); const w=document.getElementById('combatWeapon'); l.innerHTML=""; w.innerHTML='<option value="0">Mains nues</option>'; state.inventory.forEach(i=>{ if(i.type==='dmg'){const o=document.createElement('option');o.value=i.val;o.text=`${i.name} (+${i.val})`;w.add(o);} const li=document.createElement('li'); li.className="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-300"; let b=""; if(i.type==='heal'||(i.type==='none'&&i.uses>0))b=`<button onclick="useItem(${i.id})" class="text-[10px] bg-green-100 text-green-800 px-2 py-1 rounded border border-green-200 uppercase font-bold">Utiliser</button>`; else if(i.type.startsWith('equip'))b=`<button onclick="toggleEquip(${i.id})" class="text-[10px] ${i.equipped?'bg-blue-800 text-white':'bg-gray-200 text-black'} px-2 py-1 rounded mr-2 uppercase font-bold border border-gray-400">${i.equipped?'RETIRER':'ÉQUIPER'}</button>`; li.innerHTML=`<div class="flex-1 ${i.equipped?'font-bold text-blue-900':''}"><div class="font-serif text-lg">${i.name} <span class="text-xs text-gray-500 font-sans">${i.uses>0?'(x'+i.uses+')':(i.uses===-1?'(∞)':'')}</span></div><div class="text-[11px] text-gray-500 italic">${i.desc}</div></div><div class="flex items-center gap-1">${b}<i onclick="trashItem(${i.id})" class="fas fa-trash text-red-300 hover:text-red-600 cursor-pointer ml-1"></i></div>`; l.appendChild(li); }); }
+        
+        // --- SAFE CHECKPOINTS (NO MEMORY LEAK) ---
+        function createCheckpoint() { 
+            const currentCPs = state.checkpoints || [];
+            if(currentCPs.length >= 3) currentCPs.shift();
+            // CLEAN COPY
+            const stateCopy = { ...state };
+            stateCopy.checkpoints = []; // Don't nest checkpoints
+            const snapshot = JSON.stringify(stateCopy);
             currentCPs.push({ date: new Date().toLocaleTimeString(), chap: state.chapter, data: snapshot });
             state.checkpoints = currentCPs; 
             log("Système: Checkpoint créé.");
             renderCPList();
         }
 
-        function loadCP(idx) {
-            const cp = state.checkpoints[idx];
-            const loadedState = JSON.parse(cp.data);
-            const keptMaps = state.maps;
-            const keptHistory = state.history;
-            const keptCPs = state.checkpoints;
-            state = loadedState;
-            state.maps = keptMaps;
-            state.history = keptHistory;
-            state.checkpoints = keptCPs;
-            document.getElementById('modalDeath').style.display='none';
-            log(`--- RETOUR TEMPOREL (CHECKPOINT CHARGÉ: Chap ${state.chapter}) ---`);
-            changeTome(state.tome); initMap(); updateUI(); 
-            alert("Checkpoint chargé (Cartes et Historique conservés).");
+        function loadCP(idx) { 
+            try { 
+                const cp=state.checkpoints[idx]; 
+                const maps=state.maps; const hist=state.history; const cps=state.checkpoints; 
+                state=JSON.parse(cp.data); 
+                state.maps=maps; state.history=hist; state.checkpoints=cps; 
+                document.getElementById('modalDeath').style.display='none'; 
+                changeTome(state.tome); initMap(); updateUI(); alert("Chargé."); 
+            } catch(e){ console.error(e); alert("Erreur chargement CP"); } 
         }
 
-        function renderCPList() {
-            const d = document.getElementById('cpList'); d.innerHTML = "";
-            (state.checkpoints || []).forEach((cp, i) => {
-                d.innerHTML += `<div class="flex justify-between bg-gray-100 p-2 border border-gray-300 rounded text-xs font-sans">
-                    <span class="font-bold">Chap ${cp.chap} <span class="font-normal text-gray-500">(${cp.date})</span></span> 
-                    <button onclick="loadCP(${i})" class="text-blue-800 font-bold hover:underline">CHARGER</button>
-                </div>`;
-            });
-        }
-
-        // --- LOGIQUE JEU & DÉS ---
-        let diceRes=0;
-        function rollDiceVisual(n) {
-            let tot=0; const con=document.getElementById('diceVisual'); con.innerHTML="";
-            for(let i=0; i<n; i++) {
-                let r=Math.floor(Math.random()*6)+1; tot+=r;
-                con.innerHTML+=`<div class="w-8 h-8 bg-white border-2 border-gray-800 flex items-center justify-center font-bold shadow-md rounded text-lg font-serif">${r}</div>`;
-            }
-            diceRes=tot; document.getElementById('diceTotal').innerText="Total: "+tot;
-            log(`Dés (${n}d6): Résultat ${tot}`);
-            document.getElementById('lkUp').disabled = state.hero.chance<=0;
-            document.getElementById('lkDn').disabled = state.hero.chance<=0;
-        }
-        function useLuck(m) { 
-            if(state.hero.chance>0){
-                state.hero.chance--; diceRes+=m; document.getElementById('diceTotal').innerText="Total: "+diceRes; 
-                log(`Chance: ${m>0?'+1':'-1'} au dé -> ${diceRes}`); updateUI();
-            } 
-        }
-
-        function combatRound() {
-            const logDiv = document.getElementById('combatLog');
-            const eName = document.getElementById('enemyName').value || "Ennemi";
-            let ePV = parseInt(document.getElementById('enemyPV').value) || 0;
-            const eDex = parseInt(document.getElementById('enemyDex').value) || 7;
-            const bonus = parseInt(document.getElementById('combatWeapon').value);
-
-            if(ePV <= 0) return;
-
-            const rollH = Math.floor(Math.random()*6)+1 + Math.floor(Math.random()*6)+1;
-            let msg = `<div class="mb-2 pb-1 border-b border-gray-200"><strong>Tour Héros:</strong> `;
-            if(rollH <= state.hero.dex) {
-                const dmg = 1 + Math.floor(Math.random()*6)+1 + bonus; ePV -= dmg; 
-                msg += `<span class="text-green-700 font-bold">TOUCHE</span> (${rollH}) -> <span class="bg-red-100 px-1 rounded">-${dmg} PV</span></div>`;
-                log(`Combat: Touché ${eName} pour ${dmg} dégâts.`);
-            } else { 
-                msg += `<span class="text-red-400 font-bold">RATE</span> (${rollH})</div>`; 
-                log(`Combat: Raté ${eName}.`);
-            }
-
-            if(ePV > 0) {
-                const rollE = Math.floor(Math.random()*6)+1 + Math.floor(Math.random()*6)+1;
-                msg += `<div class="mb-2"><strong>${eName}:</strong> `;
-                if(rollE <= eDex) {
-                    const dmgE = Math.floor(Math.random()*6)+1; state.hero.pv -= dmgE; if(state.hero.pv<0) state.hero.pv=0;
-                    msg += `<span class="text-red-700 font-bold">TOUCHE</span> -> <span class="bg-red-200 px-1 rounded font-bold">-${dmgE} PV</span></div>`;
-                    log(`Combat: ${eName} vous touche (-${dmgE} PV).`); checkDeath();
-                } else { 
-                    msg += `<span class="text-blue-400 font-bold">RATE</span></div>`; 
-                    log(`Combat: ${eName} vous rate.`);
-                }
-            } else { 
-                msg += `<div class="text-green-800 font-bold text-center mt-2 p-1 bg-green-100 rounded border border-green-300">🏆 VICTOIRE !</div>`; ePV=0; 
-                log(`Combat: Victoire contre ${eName} !`);
-            }
-            logDiv.innerHTML = msg + logDiv.innerHTML;
-            document.getElementById('enemyPV').value = ePV; updateUI();
-        }
+        function renderCPList() { const d=document.getElementById('cpList'); d.innerHTML=""; state.checkpoints.forEach((cp,i)=>{d.innerHTML+=`<div class="flex justify-between bg-gray-100 p-2 border border-gray-300 rounded text-xs font-sans"><span class="font-bold">Chap ${cp.chap} <span class="font-normal text-gray-500">(${cp.date})</span></span><button onclick="loadCP(${i})" class="text-blue-800 font-bold hover:underline">CHARGER</button></div>`;}); }
+        function rollDiceVisual(n) { let t=0; const c=document.getElementById('diceVisual'); c.innerHTML=""; for(let i=0;i<n;i++){let r=Math.floor(Math.random()*6)+1;t+=r;c.innerHTML+=`<div class="w-8 h-8 bg-white border-2 border-gray-800 flex items-center justify-center font-bold shadow-md rounded text-lg font-serif">${r}</div>`;} document.getElementById('diceTotal').innerText="Total: "+t; }
+        function useLuck(m) { if(state.hero.chance>0){state.hero.chance--; updateUI();} }
+        function combatRound() { const log=document.getElementById('combatLog'); const en=document.getElementById('enemyName').value||"Ennemi"; let ep=parseInt(document.getElementById('enemyPV').value)||0; const ed=parseInt(document.getElementById('enemyDex').value)||7; if(ep<=0)return; const rh=Math.floor(Math.random()*12)+2; let msg=`<div class="mb-2 pb-1 border-b border-gray-200"><strong>Tour Héros:</strong> `; if(rh<=state.hero.dex){const dmg=Math.floor(Math.random()*6)+2+parseInt(document.getElementById('combatWeapon').value); ep-=dmg; msg+=`<span class="text-green-700 font-bold">TOUCHE</span> (${rh}) -> <span class="bg-red-100 px-1 rounded">-${dmg} PV</span></div>`; log(`Combat: Touché ${en} pour ${dmg} dégâts.`);}else{msg+=`<span class="text-red-400 font-bold">RATE</span> (${rh})</div>`; log(`Combat: Raté ${en}.`);} if(ep>0){const re=Math.floor(Math.random()*12)+2; msg+=`<div class="mb-2"><strong>${en}:</strong> `; if(re<=ed){const de=Math.floor(Math.random()*6)+1; state.hero.pv-=de; msg+=`<span class="text-red-700 font-bold">TOUCHE</span> -> <span class="bg-red-200 px-1 rounded font-bold">-${de} PV</span></div>`; log(`Combat: ${en} vous touche (-${de} PV).`); checkDeath();}else{msg+=`<span class="text-blue-400 font-bold">RATE</span></div>`; log(`Combat: ${en} vous rate.`);}}else{msg+=`<div class="text-green-800 font-bold text-center mt-2 p-1 bg-green-100 rounded border border-green-300">🏆 VICTOIRE !</div>`; ep=0; log(`Combat: Victoire contre ${en} !`);} log.innerHTML=msg+log.innerHTML; document.getElementById('enemyPV').value=ep; updateUI(); }
         function resetCombat() { document.getElementById('combatLog').innerHTML=""; document.getElementById('enemyPV').value=""; }
+        function checkDeath() { if(state.hero.pv<=0){document.getElementById('modalDeath').style.display='flex'; let h=`<div class="bg-red-50 p-3 border border-red-300 rounded mb-4 text-left"><label class="block font-bold text-red-900 mb-1">Le livre indique une suite ?</label><div class="flex gap-2"><input id="defeatChapInput" type="number" placeholder="N°" class="border p-1 text-lg w-20 rounded text-center font-bold"><button onclick="goToDefeatChapter()" class="bg-red-700 text-[#f3e5ab] px-4 py-1 rounded font-bold hover:bg-red-800 shadow">S'Y RENDRE</button></div><p class="text-xs text-red-500 mt-1 italic">Note: Vous relève avec 1 PV.</p></div>`; if(state.mode==='Simplifié' && state.checkpoints.length>0){html+=`<div class="text-left mt-4"><p class="font-bold mb-2">Ou charger un checkpoint :</p>`; state.checkpoints.forEach((cp,idx)=>{html+=`<button onclick="loadCP(${idx})" class="block w-full bg-blue-100 p-3 mt-1 rounded text-left text-sm hover:bg-blue-200 border border-blue-200 shadow-sm font-sans"><i class="fas fa-undo"></i> Chap ${cp.chap} (${cp.date})</button>`;}); html+=`</div>`;} html+=`<hr class="my-6 border-red-200"><button onclick="location.reload()" class="bg-gray-800 text-white p-3 rounded w-full font-bold shadow-lg">RECOMMENCER L'AVENTURE</button>`; document.getElementById('deathContent').innerHTML=h;} }
+        function goToDefeatChapter() { const val=document.getElementById('defeatChapInput').value; if(val){state.hero.pv=1; goToChapter(val); document.getElementById('modalDeath').style.display='none'; log(`Suite défaite -> Chapitre ${val} (Relèvement 1 PV)`); updateUI();} }
+        function saveNotes() { state.notes=document.getElementById('persistentNotes').value; }
+        function addLogNote() { const t=document.getElementById('quickNote').value; if(t){log("NOTE: "+t); document.getElementById('quickNote').value="";} }
+        function downloadSave() { state.maps[state.currentMap]=document.getElementById('drawingCanvas').toDataURL(); const b=new Blob([JSON.stringify(state)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download="save.json"; a.click(); }
+        function loadFromFile(i) { const f=i.files[0]; const r=new FileReader(); r.onload=(e)=>{try{state=JSON.parse(e.target.result); document.getElementById('setup-screen').classList.add('hidden'); document.getElementById('game-ui').classList.remove('hidden'); changeTome(state.tome); initMap(); updateUI(); renderHistory(); log("Système: Fichier de sauvegarde chargé.");}catch(err){alert("Erreur fichier: " + err.message); console.error(err);}}; r.readAsText(f); }
         
-        function checkDeath() {
-            if(state.hero.pv <= 0) {
-                log("HÉROS VAINCU (0 PV).");
-                const m = document.getElementById('modalDeath'); 
-                const c = document.getElementById('deathContent'); 
-                m.style.display = 'flex';
-                
-                let html = `
-                    <div class="bg-red-50 p-3 border border-red-300 rounded mb-4 text-left">
-                        <label class="block font-bold text-red-900 mb-1">Le livre indique une suite ?</label>
-                        <div class="flex gap-2">
-                            <input id="defeatChapInput" type="number" placeholder="N°" class="border p-1 text-lg w-20 rounded text-center font-bold">
-                            <button onclick="goToDefeatChapter()" class="bg-red-700 text-[#f3e5ab] px-4 py-1 rounded font-bold hover:bg-red-800 shadow">S'Y RENDRE</button>
-                        </div>
-                        <p class="text-xs text-red-500 mt-1 italic">Note: Vous relève avec 1 PV.</p>
-                    </div>
-                `;
-
-                if(state.mode==='Simplifié' && state.checkpoints.length>0) {
-                    html += `<div class="text-left mt-4"><p class="font-bold mb-2">Ou charger un checkpoint :</p>`;
-                    state.checkpoints.forEach((cp, idx) => {
-                        html += `<button onclick="loadCP(${idx})" class="block w-full bg-blue-100 p-3 mt-1 rounded text-left text-sm hover:bg-blue-200 border border-blue-200 shadow-sm font-sans">
-                            <i class="fas fa-undo"></i> Chap ${cp.chap} (${cp.date})
-                        </button>`;
-                    });
-                    html += `</div>`;
-                }
-                
-                html += `<hr class="my-6 border-red-200"><button onclick="location.reload()" class="bg-gray-800 text-white p-3 rounded w-full font-bold shadow-lg">RECOMMENCER L'AVENTURE</button>`;
-                
-                c.innerHTML = html;
-            }
-        }
-
-        function goToDefeatChapter() {
-            const val = document.getElementById('defeatChapInput').value;
-            if(val) {
-                state.hero.pv = 1;
-                goToChapter(val);
-                document.getElementById('modalDeath').style.display = 'none';
-                log(`Suite défaite -> Chapitre ${val} (Relèvement 1 PV)`);
-                updateUI();
-            }
-        }
-
-        // --- CARTE & UTILS ---
-        let canvas, ctx, isDr=false, cColor="black", cTool="pen", zoomLevel=1;
-        
-        function initMap() {
-            canvas = document.getElementById('drawingCanvas'); ctx = canvas.getContext('2d');
-            canvas.addEventListener('mousedown', start); canvas.addEventListener('touchstart', start);
-            canvas.addEventListener('mousemove', draw); canvas.addEventListener('touchmove', draw);
-            canvas.addEventListener('mouseup', stop); canvas.addEventListener('touchend', stop);
-            loadMapImg();
-        }
-
-        function start(e) { 
-            if(cTool === 'text') { 
-                const p = pos(e); 
-                const t = prompt("Texte de l'annotation :"); 
-                if(t) { ctx.font="16px EB Garamond"; ctx.fillStyle=cColor; ctx.fillText(t,p.x,p.y); state.maps[state.currentMap]=canvas.toDataURL(); } 
-                return; 
-            }
-            isDr = true; ctx.beginPath(); const p = pos(e); ctx.moveTo(p.x, p.y);
-        }
-        function draw(e) { 
-            if(!isDr) return; e.preventDefault(); const p = pos(e); 
-            ctx.lineWidth = cTool==='eraser'?20:2; 
-            ctx.globalCompositeOperation = cTool==='eraser'?'destination-out':'source-over'; 
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = cColor; ctx.lineTo(p.x, p.y); ctx.stroke(); 
-        }
-        function stop() { if(isDr){isDr=false; state.maps[state.currentMap]=canvas.toDataURL();} }
-        
-        function pos(e) { 
-            const r = canvas.getBoundingClientRect(); 
-            const x = (e.clientX || e.touches[0].clientX) - r.left;
-            const y = (e.clientY || e.touches[0].clientY) - r.top;
-            // Correction coordonnées si zoom CSS (Optionnel si on zoom le container, ici on zoom le container via CSS non)
-            // Ici le zoom est géré par style.transform
-            return { x: x / zoomLevel, y: y / zoomLevel }; 
-        }
-
-        function setPen(c) { cColor=c; cTool='pen'; document.querySelectorAll('#tab-carte button').forEach(b=>b.classList.remove('ring-2')); } 
-        function setTool(t) { 
-            cTool=t; 
-            // Visual feedback
-            ['btn-pen','btn-eraser','btn-text'].forEach(id => document.getElementById(id).classList.remove('bg-gray-400'));
-            document.getElementById('btn-'+t).classList.add('bg-gray-400');
-        }
-
-        // --- MAP CONTROLS ---
-        function addMap() { const n=prompt("Nom du nouveau plan:"); if(n) { state.maps[state.currentMap]=canvas.toDataURL(); state.maps[n]=""; state.currentMap=n; ctx.clearRect(0,0,2000,2000); updateMapSel(); } }
+        let canvas,ctx,isDr=false,cColor="black",cTool="pen",zoom=1;
+        function initMap() { canvas=document.getElementById('drawingCanvas'); ctx=canvas.getContext('2d'); canvas.addEventListener('mousedown',s); canvas.addEventListener('mousemove',d); canvas.addEventListener('mouseup',e); canvas.addEventListener('touchstart',s); canvas.addEventListener('touchmove',d); canvas.addEventListener('touchend',e); loadMapImg(); }
+        function s(ev) { if(cTool==='text'){const p=pos(ev);const t=prompt("Texte de l'annotation :");if(t){ctx.font="16px EB Garamond";ctx.fillStyle=cColor;ctx.fillText(t,p.x,p.y);state.maps[state.currentMap]=canvas.toDataURL();}return;} isDr=true; ctx.beginPath(); const p=pos(ev); ctx.moveTo(p.x,p.y); }
+        function d(ev) { if(!isDr)return; ev.preventDefault(); const p=pos(ev); ctx.lineWidth=cTool==='eraser'?20:2; ctx.globalCompositeOperation=cTool==='eraser'?'destination-out':'source-over'; ctx.lineCap='round'; ctx.strokeStyle=cColor; ctx.lineTo(p.x,p.y); ctx.stroke(); }
+        function e() { if(isDr){isDr=false; state.maps[state.currentMap]=canvas.toDataURL();} }
+        function pos(ev) { const r=canvas.getBoundingClientRect(); const x=(ev.clientX||ev.touches[0].clientX)-r.left; const y=(ev.clientY||ev.touches[0].clientY)-r.top; return {x:x/zoom,y:y/zoom}; }
+        function setPen(c) { cColor=c; cTool='pen'; document.querySelectorAll('#tab-carte button').forEach(b=>b.classList.remove('ring-2')); } function setTool(t) { cTool=t; ['btn-pen','btn-eraser','btn-text'].forEach(id=>document.getElementById(id).classList.remove('bg-gray-400')); document.getElementById('btn-'+t).classList.add('bg-gray-400'); }
+        function addMap() { const n=prompt("Nom:"); if(n){state.maps[state.currentMap]=canvas.toDataURL(); state.maps[n]=""; state.currentMap=n; ctx.clearRect(0,0,2000,2000); updateMapSel();} }
         function changeMap(n) { state.maps[state.currentMap]=canvas.toDataURL(); state.currentMap=n; ctx.clearRect(0,0,2000,2000); loadMapImg(); }
-        function updateMapSel() { const s=document.getElementById('mapSelector'); s.innerHTML=""; Object.keys(state.maps).forEach(k=>{const o=document.createElement('option'); o.text=k; s.add(o);}); s.value=state.currentMap; }
-        function loadMapImg() { const d=state.maps[state.currentMap]; if(d) { const i=new Image(); i.onload=()=>ctx.drawImage(i,0,0); i.src=d; } else ctx.clearRect(0,0,2000,2000); }
-
-        function panMap(dx, dy) {
-            const c = document.getElementById('mapContainer');
-            c.scrollBy({left: dx, top: dy, behavior: 'smooth'});
-        }
-        function changeZoom(delta) {
-            zoomLevel += delta;
-            if(zoomLevel < 0.5) zoomLevel = 0.5;
-            if(zoomLevel > 3) zoomLevel = 3;
-            document.getElementById('drawingCanvas').style.transform = `scale(${zoomLevel})`;
-            document.getElementById('zoomDisplay').innerText = Math.round(zoomLevel*100) + "%";
-        }
-
-        // --- SAVE/LOAD ---
-        function saveNotes() { state.notes = document.getElementById('persistentNotes').value; }
-        function addLogNote() { const t = document.getElementById('quickNote').value; if(t) { log(`NOTE: ${t}`); document.getElementById('quickNote').value=""; } }
-        function downloadSave() { state.maps[state.currentMap] = canvas.toDataURL(); const blob = new Blob([JSON.stringify(state)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `save_${state.hero.name}.json`; a.click(); }
-        function loadFromFile(inp) {
-            const f = inp.files[0]; const r = new FileReader();
-            r.onload = (e) => {
-                state = JSON.parse(e.target.result);
-                document.getElementById('setup-screen').classList.add('hidden');
-                document.getElementById('game-ui').classList.remove('hidden');
-                changeTome(state.tome); initMap(); updateUI(); renderHistory();
-                log("Système: Fichier de sauvegarde chargé.");
-            };
-            r.readAsText(f);
-        }
+        function updateMapSel() { const s=document.getElementById('mapSelector'); s.innerHTML=""; Object.keys(state.maps).forEach(k=>{const o=document.createElement('option');o.text=k;s.add(o);}); s.value=state.currentMap; }
+        function loadMapImg() { const d=state.maps[state.currentMap]; if(d){const i=new Image(); i.onload=()=>ctx.drawImage(i,0,0); i.src=d;}else ctx.clearRect(0,0,2000,2000); }
+        function panMap(x,y) { document.getElementById('mapContainer').scrollBy({left:x,top:y,behavior:'smooth'}); }
+        function changeZoom(d) { zoom+=d; if(zoom<0.5)zoom=0.5; if(zoom>3)zoom=3; document.getElementById('drawingCanvas').style.transform=`scale(${zoom})`; }
 
         function updateUI() {
             const h = state.hero;
@@ -867,11 +576,8 @@
             document.getElementById('goldDisplay').value = h.gold;
             document.getElementById('chapterInput').value = state.chapter;
             document.getElementById('persistentNotes').value = state.notes || "";
-            
             const qs = document.getElementById('quickSaveArea');
-            if(state.mode === 'Simplifié') qs.classList.remove('hidden');
-            else qs.classList.add('hidden');
-
+            if(state.mode === 'Simplifié') qs.classList.remove('hidden'); else qs.classList.add('hidden');
             renderInventory(); renderCPList();
         }
         function log(m) { state.history.unshift(`[T${state.tome}|C${state.chapter}] ${m}`); renderHistory(); }
