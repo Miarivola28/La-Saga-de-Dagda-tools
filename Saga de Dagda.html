@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Saga de Dagda - Mobile Edition</title>
+    <title>La Saga de Dagda - Icon Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=EB+Garamond:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -21,7 +21,7 @@
             background-color: var(--bg);
             color: var(--text);
             transition: background 0.5s ease;
-            padding-top: 145px; 
+            padding-top: 130px; /* Réduit car header plus fin */
             padding-bottom: 30px;
             font-size: 1.1rem;
         }
@@ -37,7 +37,7 @@
             position: relative;
         }
 
-        /* --- HEADER --- */
+        /* --- HEADER COMPACT --- */
         #main-header {
             position: fixed; top: 0; left: 0; width: 100%; z-index: 50;
             background-color: var(--primary); color: #f3e5ab;
@@ -45,28 +45,27 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: background 0.5s;
         }
         .saga-title {
-            text-align: center; font-size: 1.4rem; 
+            text-align: center; font-size: 1.2rem; 
             text-shadow: 2px 2px 0 #000;
-            letter-spacing: 1px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
+            letter-spacing: 1px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
             background: rgba(0,0,0,0.2);
         }
 
-        /* --- MODIFICATION ICI POUR MOBILE --- */
+        /* --- NAVIGATION ICONES --- */
         .nav-tab {
             flex: 1; 
             text-align: center; 
-            padding: 10px 2px; /* Réduit le padding horizontal */
+            padding: 12px 0; /* Padding vertical confortable */
             cursor: pointer;
             border-bottom: 4px solid transparent; 
-            opacity: 0.7; 
-            font-size: 0.75rem; /* Taille réduite pour tenir sur une ligne */
+            opacity: 0.6; 
+            transition: 0.3s;
         }
         .nav-tab i {
-            font-size: 1rem; /* Icône un peu plus visible */
-            margin-bottom: 2px;
+            font-size: 1.4rem; /* Icônes plus grosses */
             display: block;
         }
-        .nav-tab.active { opacity: 1; border-bottom-color: #f3e5ab; background: rgba(255,255,255,0.1); color: #fff; }
+        .nav-tab.active { opacity: 1; border-bottom-color: #f3e5ab; background: rgba(255,255,255,0.15); color: #fff; transform: translateY(-2px); }
 
         /* --- UI ELEMENTS --- */
         .stat-btn { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,0.2); }
@@ -136,10 +135,10 @@
         </div>
 
         <div class="flex">
-            <div class="nav-tab active" onclick="switchTab('tab-aventure')"><i class="fas fa-scroll"></i><br>Aventure</div>
-            <div class="nav-tab" onclick="switchTab('tab-carte')"><i class="fas fa-map-marked-alt"></i><br>Carte</div>
-            <div class="nav-tab" onclick="switchTab('tab-journal')"><i class="fas fa-book-open"></i><br>Journal</div>
-            <div class="nav-tab" onclick="switchTab('tab-ambiance')"><i class="fas fa-music"></i><br>Ambiance</div>
+            <div class="nav-tab active" onclick="switchTab('tab-aventure')" title="Aventure"><i class="fas fa-scroll"></i></div>
+            <div class="nav-tab" onclick="switchTab('tab-carte')" title="Carte"><i class="fas fa-map-marked-alt"></i></div>
+            <div class="nav-tab" onclick="switchTab('tab-journal')" title="Journal"><i class="fas fa-book-open"></i></div>
+            <div class="nav-tab" onclick="switchTab('tab-ambiance')" title="Musique"><i class="fas fa-music"></i></div>
         </div>
     </header>
 
@@ -591,7 +590,6 @@
                 state.history=hist; 
                 state.checkpoints=cps; 
                 
-                if(!state.tree || !state.tree[1]) rebuildTree(); 
                 document.getElementById('modalDeath').style.display='none'; 
                 changeTome(state.tome); initMap(); updateUI(); alert("Chargé."); 
             } catch(e){ console.error(e); alert("Erreur chargement CP"); } 
