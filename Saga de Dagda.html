@@ -3,126 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Saga de Dagda - Player</title>
+    <title>La Saga de Dagda - Hybrid Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=EB+Garamond:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         /* --- THEMES --- */
-        :root { --primary: #1e3a8a; --bg: #eff6ff; --accent: #2563eb; --border: #bfdbfe; }
-        body.theme-t1 { --primary: #1e3a8a; --bg: #eff6ff; } /* Bleu */
-        body.theme-t2 { --primary: #14532d; --bg: #f0fdf4; } /* Vert */
-        body.theme-t3 { --primary: #7f1d1d; --bg: #fef2f2; } /* Rouge */
-        body.theme-ext { --primary: #581c87; --bg: #faf5ff; } /* Violet */
+        :root { --primary: #2c1810; --bg: #f3e5ab; --accent: #8b0000; --border: #8b4513; --text: #1a0f0a; }
+        body.theme-t1 { --bg: #f3e5ab; --primary: #1e3a8a; } /* Bleu */
+        body.theme-t2 { --bg: #f0fdf4; --primary: #14532d; } /* Vert */
+        body.theme-t3 { --bg: #fef2f2; --primary: #7f1d1d; } /* Rouge */
+        body.theme-ext { --bg: #faf5ff; --primary: #581c87; } /* Violet */
 
         body { 
-            font-family: 'Lato', sans-serif; 
+            font-family: 'EB Garamond', serif; 
             background-color: var(--bg);
+            color: var(--text);
             transition: background 0.5s ease;
-            padding-top: 140px; 
-            padding-bottom: 20px;
+            padding-top: 145px; 
+            padding-bottom: 30px;
+            font-size: 1.1rem;
         }
         
-        h1, .title-font { font-family: 'Cinzel', serif; }
+        h1, h2, h3, button, .title-font, .nav-tab, select, input { font-family: 'MedievalSharp', cursive; }
         
         .card {
-            background: white; border: 2px solid var(--border);
-            border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            background: rgba(255, 255, 255, 0.8); 
+            border: 2px solid var(--primary);
+            border-radius: 4px; 
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.1);
             margin-bottom: 12px;
         }
 
         /* --- HEADER --- */
         #main-header {
             position: fixed; top: 0; left: 0; width: 100%; z-index: 50;
-            background-color: var(--primary); color: white;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: background 0.5s;
+            background-color: var(--primary); color: #f3e5ab;
+            border-bottom: 4px solid rgba(0,0,0,0.2);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: background 0.5s;
         }
         .saga-title {
-            text-align: center; font-size: 1.2rem; font-weight: bold;
-            letter-spacing: 2px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.2);
+            text-align: center; font-size: 1.4rem; 
+            text-shadow: 2px 2px 0 #000;
+            letter-spacing: 1px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
             background: rgba(0,0,0,0.2);
         }
 
         .nav-tab {
             flex: 1; text-align: center; padding: 12px; cursor: pointer;
-            border-bottom: 4px solid transparent; opacity: 0.7; font-size: 0.8rem; font-weight: bold;
+            border-bottom: 4px solid transparent; opacity: 0.7; font-size: 0.9rem;
         }
-        .nav-tab.active { opacity: 1; border-bottom-color: white; background: rgba(255,255,255,0.1); }
+        .nav-tab.active { opacity: 1; border-bottom-color: #f3e5ab; background: rgba(255,255,255,0.1); color: #fff; }
 
         /* --- UI ELEMENTS --- */
-        .stat-btn { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; cursor: pointer; }
+        .stat-btn { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,0.2); }
         .btn-minus { background: #fee2e2; color: #991b1b; }
         .btn-plus { background: #dcfce7; color: #166534; }
-        .prog-bar-bg { background: #e2e8f0; height: 14px; border-radius: 7px; overflow: hidden; border: 1px solid #cbd5e1; }
+        .prog-bar-bg { background: #d1d5db; height: 16px; border-radius: 8px; overflow: hidden; border: 1px solid #4b5563; }
         .prog-bar-fill { height: 100%; transition: width 0.3s; }
 
-        /* --- CARTE --- */
+        /* --- CARTE (CORRIGÉE: SCROLL + BOUTONS) --- */
         #mapContainer {
-            width: 100%; height: 60vh; 
-            overflow: auto; 
-            border: 2px solid var(--primary); background: white; position: relative;
-            touch-action: pan-x pan-y;
+            width: 100%; height: 50vh; 
+            overflow: auto; /* Scroll natif rétabli ! */
+            border: 4px double var(--primary); background: #fffdf5; position: relative;
+            touch-action: pan-x pan-y; /* Permet le glissement */
         }
         #drawingCanvas { 
-            background-image: radial-gradient(#ccc 1px, transparent 1px); background-size: 20px 20px; 
-            cursor: crosshair; display: block;
+            background-image: radial-gradient(#aaa 1px, transparent 1px); background-size: 20px 20px; 
+            cursor: crosshair; display: block; transform-origin: 0 0;
         }
         .compass {
-            position: absolute; top: 10px; right: 10px; width: 50px; height: 50px; pointer-events: none; opacity: 0.8; z-index: 10;
+            position: absolute; top: 10px; right: 10px; width: 60px; height: 60px; pointer-events: none; opacity: 0.6; z-index: 10;
             background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Brosen_windrose.svg/1024px-Brosen_windrose.svg.png') center/contain no-repeat;
         }
+        .map-controls {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 5px; background: var(--primary); border-radius: 0 0 8px 8px;
+        }
+        .map-btn {
+            background: #f3e5ab; color: var(--primary); border: 1px solid #000;
+            font-size: 1.2rem; padding: 5px; border-radius: 4px;
+        }
 
-        /* --- STATUS FEEDBACK --- */
-        .fade-text { transition: opacity 1s; opacity: 0; font-weight: bold; color: #4ade80; margin-left: 5px; font-size: 10px; }
+        /* --- MODALS & FADE --- */
+        .fade-text { transition: opacity 1s; opacity: 0; font-weight: bold; color: #4ade80; margin-left: 5px; font-size: 14px; }
         .fade-in { opacity: 1; }
-
-        /* --- MODALS --- */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: none; align-items: center; justify-content: center; }
     </style>
 </head>
 <body class="theme-t1">
 
     <header id="main-header">
-        <div class="saga-title title-font">LA SAGA DE DAGDA</div>
+        <div class="saga-title">LA SAGA DE DAGDA</div>
         
-        <div class="flex justify-between items-center p-2 px-4 gap-2">
-            <select id="tomeSelect" onchange="changeTome()" class="bg-black/20 border border-white/30 rounded text-xs p-1 text-white truncate flex-1">
+        <div class="flex justify-between items-center p-2 px-3 gap-2">
+            <select id="tomeSelect" onchange="changeTome()" class="bg-black/30 border border-[#f3e5ab] rounded text-xs p-1 text-[#f3e5ab] truncate flex-1 font-serif">
                 <option value="1">Tome 1 : La Harpe des quatre saisons</option>
                 <option value="2">Tome 2 : La Confrérie de Nuada</option>
                 <option value="3">Tome 3 : Les Entrailles du temps</option>
                 <option value="4">Extension : Le Royaume des Ombres</option>
             </select>
             
-            <div class="flex items-center gap-1 bg-black/20 p-1 rounded border border-white/30">
-                <span class="text-[10px] font-bold uppercase ml-1">Chap.</span>
+            <div class="flex items-center gap-1 bg-black/30 p-1 rounded border border-[#f3e5ab]">
+                <span class="text-xs font-bold uppercase ml-1 text-[#f3e5ab]">Chap.</span>
                 <input type="number" id="chapterInput" class="w-12 text-center rounded text-black font-bold p-0.5 text-sm" value="1">
-                <button onclick="validateChapter()" class="bg-white/20 hover:bg-white/40 text-white rounded px-2 py-0.5 text-xs">
-                    <i class="fas fa-chevron-right"></i>
+                <button onclick="validateChapter()" class="bg-[#f3e5ab] hover:bg-white text-black rounded px-2 py-0.5 text-xs">
+                    <i class="fas fa-chevron-right"></i> ALLER
                 </button>
                 <span id="chapStatus" class="fade-text">OK</span>
             </div>
         </div>
 
         <div class="flex">
-            <div class="nav-tab active" onclick="switchTab('tab-aventure')"><i class="fas fa-sword"></i> Aventure</div>
-            <div class="nav-tab" onclick="switchTab('tab-carte')"><i class="fas fa-map"></i> Carte</div>
-            <div class="nav-tab" onclick="switchTab('tab-journal')"><i class="fas fa-book"></i> Journal</div>
+            <div class="nav-tab active" onclick="switchTab('tab-aventure')"><i class="fas fa-scroll"></i> Aventure</div>
+            <div class="nav-tab" onclick="switchTab('tab-carte')"><i class="fas fa-map-marked-alt"></i> Carte</div>
+            <div class="nav-tab" onclick="switchTab('tab-journal')"><i class="fas fa-book-open"></i> Journal</div>
         </div>
     </header>
 
     <div class="max-w-3xl mx-auto p-4">
 
-        <div id="setup-screen" class="card p-6 border-l-4 border-l-yellow-500 z-50 relative">
-            <h2 class="text-2xl font-bold mb-4 title-font text-center">Nouvelle Partie</h2>
-            <div class="space-y-3">
-                <input type="text" id="setupName" class="w-full p-2 border rounded" placeholder="Nom du Héros">
-                <select id="setupMode" class="w-full p-2 border rounded">
+        <div id="setup-screen" class="card p-6 border-l-4 border-l-yellow-600 z-50 relative">
+            <h2 class="text-3xl font-bold mb-4 text-center">Nouvelle Partie</h2>
+            <div class="space-y-4">
+                <input type="text" id="setupName" class="w-full p-2 border border-gray-400 rounded bg-[#fffdf5]" placeholder="Nom du Héros">
+                <select id="setupMode" class="w-full p-2 border border-gray-400 rounded bg-[#fffdf5]">
                     <option value="Simplifié">Mode Simplifié (Checkpoints)</option>
                     <option value="Narratif">Mode Narratif</option>
                     <option value="Mortel">Mode Mortel</option>
                 </select>
-                <select id="setupTalent" class="w-full p-2 border rounded">
+                <select id="setupTalent" class="w-full p-2 border border-gray-400 rounded bg-[#fffdf5]">
                     <option value="Instinct">Instinct</option>
                     <option value="Herbologie">Herbologie</option>
                     <option value="Discrétion">Discrétion</option>
@@ -131,9 +142,9 @@
                     <option value="Doigts Agiles">Doigts Agiles</option>
                     <option value="Empratique">Empratique</option>
                 </select>
-                <button onclick="startGame()" class="w-full bg-blue-900 text-white p-3 rounded font-bold">COMMENCER</button>
-                <div class="text-center text-xs mt-2">- OU -</div>
-                <label class="block w-full text-center p-2 bg-gray-200 rounded cursor-pointer border border-gray-300 hover:bg-gray-300">
+                <button onclick="startGame()" class="w-full bg-[#2c1810] text-[#f3e5ab] p-3 rounded font-bold text-lg border-2 border-[#f3e5ab] shadow-lg">COMMENCER L'AVENTURE</button>
+                <div class="text-center text-sm mt-2">- OU -</div>
+                <label class="block w-full text-center p-2 bg-gray-200 rounded cursor-pointer border border-gray-400 hover:bg-gray-300">
                     <i class="fas fa-upload"></i> Charger Sauvegarde (.json)
                     <input type="file" class="hidden" onchange="loadFromFile(this)">
                 </label>
@@ -145,115 +156,115 @@
             <div id="tab-aventure" class="tab-content block space-y-3">
                 
                 <div id="quickSaveArea" class="hidden mb-2">
-                    <button onclick="createCheckpoint()" class="w-full py-2 bg-blue-100 text-blue-800 rounded border border-blue-300 font-bold text-xs hover:bg-blue-200 transition">
+                    <button onclick="createCheckpoint()" class="w-full py-2 bg-blue-100 text-blue-900 rounded border border-blue-400 font-bold text-sm shadow hover:bg-blue-200 transition">
                         <i class="fas fa-save"></i> SAUVEGARDE RAPIDE (CHECKPOINT)
                     </button>
                 </div>
 
-                <div class="card p-3">
-                    <div class="mb-3">
+                <div class="card p-4">
+                    <div class="mb-4">
                         <div class="flex justify-between items-center mb-1">
-                            <span class="text-xs font-bold flex items-center gap-1"><i class="fas fa-heart text-red-600"></i> SANTÉ</span>
+                            <span class="text-sm font-bold flex items-center gap-1 text-red-800"><i class="fas fa-heart"></i> SANTÉ (PV)</span>
                             <div class="flex items-center gap-2">
-                                <span id="pvText" class="font-bold text-sm">0/0</span>
-                                <div class="flex items-center gap-0.5 bg-gray-100 rounded px-1 border">
+                                <span id="pvText" class="font-bold text-lg">0/0</span>
+                                <div class="flex items-center gap-1 bg-white/50 rounded px-1 border border-gray-300">
                                     <span class="text-[10px] text-gray-500 mr-1">MAX</span>
-                                    <div class="stat-btn btn-minus w-4 h-4 text-[10px]" onclick="modStat('pvMax', -1)">-</div>
-                                    <div class="stat-btn btn-plus w-4 h-4 text-[10px]" onclick="modStat('pvMax', 1)">+</div>
+                                    <div class="stat-btn btn-minus" onclick="modStat('pvMax', -1)">-</div>
+                                    <div class="stat-btn btn-plus" onclick="modStat('pvMax', 1)">+</div>
                                 </div>
                             </div>
                         </div>
-                        <div class="prog-bar-bg"><div id="pvBar" class="prog-bar-fill bg-red-600" style="width: 50%;"></div></div>
-                        <div class="flex justify-between mt-1 px-1">
-                            <button onclick="modStat('pv', -1)" class="stat-btn btn-minus">-1</button>
-                            <button onclick="modStat('pv', 1)" class="stat-btn btn-plus">+1</button>
+                        <div class="prog-bar-bg"><div id="pvBar" class="prog-bar-fill bg-red-700" style="width: 50%;"></div></div>
+                        <div class="flex justify-between mt-2 px-1">
+                            <button onclick="modStat('pv', -1)" class="stat-btn btn-minus w-8 h-8">-1</button>
+                            <button onclick="modStat('pv', 1)" class="stat-btn btn-plus w-8 h-8">+1</button>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <div class="flex justify-between text-xs font-bold mb-1">
-                            <span class="flex items-center gap-1"><i class="fas fa-star text-yellow-500"></i> CHANCE</span>
-                            <span id="chanceText">0</span>
+                    <div class="mb-4">
+                        <div class="flex justify-between text-sm font-bold mb-1">
+                            <span class="flex items-center gap-1 text-yellow-700"><i class="fas fa-star"></i> CHANCE</span>
+                            <span id="chanceText" class="text-lg">0</span>
                         </div>
                         <div class="prog-bar-bg"><div id="chanceBar" class="prog-bar-fill bg-yellow-500" style="width: 0%;"></div></div>
-                        <div class="flex justify-between mt-1 px-1">
-                            <button onclick="modStat('chance', -1)" class="stat-btn btn-minus">-1</button>
-                            <button onclick="modStat('chance', 1)" class="stat-btn btn-plus">+1</button>
+                        <div class="flex justify-between mt-2 px-1">
+                            <button onclick="modStat('chance', -1)" class="stat-btn btn-minus w-8 h-8">-1</button>
+                            <button onclick="modStat('chance', 1)" class="stat-btn btn-plus w-8 h-8">+1</button>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-2 border-t pt-2 text-center">
+                    <div class="grid grid-cols-3 gap-2 border-t border-gray-300 pt-3 text-center">
                         <div>
-                            <div class="text-[10px] uppercase text-gray-500">Dextérité</div>
+                            <div class="text-xs uppercase text-gray-600 font-bold mb-1">🎯 Dextérité</div>
                             <div class="flex justify-center items-center gap-2">
-                                <button onclick="modStat('dex', -1)" class="text-red-500 font-bold px-1">-</button>
-                                <span id="dexDisplay" class="font-bold text-lg text-blue-800">7</span>
-                                <button onclick="modStat('dex', 1)" class="text-green-500 font-bold px-1">+</button>
+                                <button onclick="modStat('dex', -1)" class="text-red-500 font-bold px-1 text-lg">-</button>
+                                <span id="dexDisplay" class="font-bold text-2xl text-blue-900">7</span>
+                                <button onclick="modStat('dex', 1)" class="text-green-600 font-bold px-1 text-lg">+</button>
                             </div>
                         </div>
                         <div>
-                            <div class="text-[10px] uppercase text-gray-500">Talents</div>
-                            <div id="talentDisplay" class="font-bold text-xs leading-tight">Instinct</div>
-                            <button onclick="addTalent()" class="text-[10px] text-blue-600 underline mt-1">+ Ajouter</button>
+                            <div class="text-xs uppercase text-gray-600 font-bold mb-1">👤 Talents</div>
+                            <div id="talentDisplay" class="font-bold text-sm leading-tight italic">Instinct</div>
+                            <button onclick="addTalent()" class="text-[10px] text-blue-700 underline mt-1 font-sans">+ Ajouter</button>
                         </div>
                         <div>
-                            <div class="text-[10px] uppercase text-gray-500">Boulons</div>
-                            <input type="number" id="goldDisplay" class="w-12 text-center font-bold border-b bg-transparent" value="0" onchange="updateGold(this)">
+                            <div class="text-xs uppercase text-gray-600 font-bold mb-1">🪙 Boulons</div>
+                            <input type="number" id="goldDisplay" class="w-16 text-center font-bold text-xl border-b-2 border-yellow-600 bg-transparent" value="0" onchange="updateGold(this)">
                         </div>
                     </div>
                 </div>
 
                 <div class="card p-3">
-                    <h3 class="text-xs font-bold text-gray-500 mb-2 border-b">LANCER DE DÉS</h3>
+                    <h3 class="text-sm font-bold text-gray-700 mb-2 border-b border-gray-300">🎲 LANCER DE DÉS</h3>
                     <div class="flex items-center gap-4">
-                        <div class="flex flex-col gap-1 w-1/4">
-                            <button onclick="rollDiceVisual(1)" class="bg-gray-200 text-xs py-1 rounded">1 Dé</button>
-                            <button onclick="rollDiceVisual(2)" class="bg-gray-300 text-xs py-1 rounded">2 Dés</button>
+                        <div class="flex flex-col gap-1 w-1/3">
+                            <button onclick="rollDiceVisual(1)" class="bg-gray-200 border border-gray-400 text-sm py-1 rounded shadow-sm">1 Dé</button>
+                            <button onclick="rollDiceVisual(2)" class="bg-gray-300 border border-gray-400 text-sm py-1 rounded shadow-sm">2 Dés</button>
                         </div>
                         <div id="diceVisual" class="flex-1 flex justify-center gap-2 h-10 items-center">
                             <span class="text-xs text-gray-400 italic">...</span>
                         </div>
-                        <div class="w-1/4 text-center">
-                            <div class="text-[10px] text-gray-500">Chance</div>
-                            <div class="flex justify-center gap-1">
-                                <button onclick="useLuck(-1)" id="lkDn" class="w-6 bg-yellow-100 border border-yellow-400 rounded disabled:opacity-50">-</button>
-                                <button onclick="useLuck(1)" id="lkUp" class="w-6 bg-yellow-100 border border-yellow-400 rounded disabled:opacity-50">+</button>
+                        <div class="w-1/3 text-center">
+                            <div class="text-[10px] text-gray-500 font-sans">Utiliser Chance</div>
+                            <div class="flex justify-center gap-1 mt-1">
+                                <button onclick="useLuck(-1)" id="lkDn" class="w-8 h-8 bg-yellow-100 border border-yellow-500 rounded disabled:opacity-50 text-yellow-800 font-bold">-</button>
+                                <button onclick="useLuck(1)" id="lkUp" class="w-8 h-8 bg-yellow-100 border border-yellow-500 rounded disabled:opacity-50 text-yellow-800 font-bold">+</button>
                             </div>
                         </div>
                     </div>
-                    <div id="diceTotal" class="text-center font-bold text-blue-900 mt-1 h-5"></div>
+                    <div id="diceTotal" class="text-center font-bold text-blue-900 mt-2 h-6 text-lg"></div>
                 </div>
 
-                <div class="card p-3 border-l-4 border-l-red-700">
-                    <h3 class="title-font font-bold text-red-900 mb-2 flex justify-between">
-                        <span><i class="fas fa-skull"></i> COMBAT</span>
-                        <button onclick="resetCombat()" class="text-[10px] font-normal text-gray-500 underline">Reset</button>
+                <div class="card p-4 border-l-4 border-l-red-800 bg-red-50/50">
+                    <h3 class="title-font text-lg font-bold text-red-900 mb-3 flex justify-between items-center">
+                        <span>⚔️ COMBAT</span>
+                        <button onclick="resetCombat()" class="text-xs font-normal text-gray-500 underline font-sans">Nouveau</button>
                     </h3>
                     <div class="flex gap-2 text-sm mb-2">
-                        <input id="enemyName" placeholder="Nom Ennemi" class="flex-1 p-1 border rounded">
-                        <input id="enemyPV" type="number" placeholder="PV" class="w-12 p-1 border rounded font-bold text-red-600">
-                        <input id="enemyDex" type="number" placeholder="Dex" class="w-10 p-1 border rounded text-blue-600">
+                        <input id="enemyName" placeholder="Nom Ennemi" class="flex-1 p-1 border border-red-300 rounded bg-white">
+                        <input id="enemyPV" type="number" placeholder="PV" class="w-14 p-1 border border-red-300 rounded font-bold text-red-600 text-center bg-white">
+                        <input id="enemyDex" type="number" placeholder="Dex" class="w-12 p-1 border border-blue-300 rounded text-blue-600 text-center bg-white">
                     </div>
-                    <div class="mb-2">
-                         <select id="combatWeapon" class="w-full text-sm border p-1 rounded bg-gray-50"></select>
+                    <div class="mb-3">
+                         <select id="combatWeapon" class="w-full text-sm border p-1 rounded bg-white"></select>
                     </div>
-                    <button onclick="combatRound()" class="w-full bg-red-800 text-white py-2 rounded font-bold shadow mb-2">ATTAQUER (TOUR COMPLET)</button>
-                    <div id="combatLog" class="h-24 overflow-y-auto bg-gray-100 p-2 text-xs border rounded"></div>
+                    <button onclick="combatRound()" class="w-full bg-red-800 text-[#f3e5ab] py-3 rounded font-bold shadow-md border border-black hover:bg-red-900 text-lg">⚔️ COMBATTRE</button>
+                    <div id="combatLog" class="h-32 overflow-y-auto bg-white p-2 text-sm border border-gray-300 rounded mt-2 font-serif leading-tight"></div>
                 </div>
 
                 <div class="card p-3">
-                    <h3 class="title-font font-bold mb-2 flex items-center gap-2"><i class="fas fa-scroll"></i> BESACE</h3>
+                    <h3 class="title-font font-bold mb-2 flex items-center gap-2"><i class="fas fa-shopping-bag"></i> BESACE</h3>
                     
                     <div class="bg-blue-50 p-2 rounded border border-blue-200 mb-2">
-                        <label class="text-[10px] text-gray-500 uppercase font-bold">Objets détectés (Chapitre actuel)</label>
+                        <label class="text-[10px] text-gray-500 uppercase font-bold font-sans">Objets détectés (Chapitre actuel)</label>
                         <div class="flex gap-1 mt-1">
-                            <select id="contextItemSelect" class="flex-1 text-sm border p-1 rounded"></select>
+                            <select id="contextItemSelect" class="flex-1 text-sm border p-1 rounded font-serif"></select>
                             <button onclick="addContextItem()" class="bg-blue-800 text-white px-3 rounded text-sm">+</button>
                         </div>
                     </div>
 
                     <details class="mb-2">
-                        <summary class="text-xs text-gray-500 cursor-pointer p-1 bg-gray-100 rounded font-bold">+ Créer Objet Personnalisé</summary>
+                        <summary class="text-xs text-gray-600 cursor-pointer p-1 bg-gray-200 rounded font-bold font-sans text-center">+ CRÉER OBJET</summary>
                         <div class="p-2 border mt-1 rounded bg-white space-y-2">
                             <div>
                                 <label class="text-[10px] font-bold">Nom</label>
@@ -298,7 +309,7 @@
                                     <input id="cUsesNb" type="number" value="3" class="w-full text-xs p-1 border">
                                 </div>
                             </div>
-                            <button onclick="addCustomItem()" class="w-full bg-gray-200 text-xs py-1 font-bold">Ajouter à la besace</button>
+                            <button onclick="addCustomItem()" class="w-full bg-gray-300 text-xs py-2 font-bold mt-1 border border-gray-400 rounded">AJOUTER À LA BESACE</button>
                         </div>
                     </details>
 
@@ -307,48 +318,61 @@
             </div>
 
             <div id="tab-carte" class="tab-content hidden">
-                <div class="bg-white p-2 border-b flex justify-between items-center sticky top-[140px] z-20 shadow-sm">
+                <div class="bg-white p-2 border-b-2 border-[#8b4513] flex justify-between items-center sticky top-[140px] z-20 shadow-sm">
                     <div class="flex gap-1">
-                        <select id="mapSelector" onchange="changeMap(this.value)" class="text-xs border rounded w-32"></select>
-                        <button onclick="addMap()" class="text-green-600 bg-green-50 px-2 border border-green-200 rounded text-xs">+</button>
+                        <select id="mapSelector" onchange="changeMap(this.value)" class="text-xs border rounded w-32 font-serif bg-[#fffdf5]"></select>
+                        <button onclick="addMap()" class="text-green-800 bg-green-100 px-2 border border-green-300 rounded text-xs font-bold">+</button>
                     </div>
-                    <div class="flex gap-1">
-                        <div class="flex border-r pr-2 mr-1 gap-1">
-                            <button onclick="setPen('black')" class="w-5 h-5 bg-black rounded-full border"></button>
-                            <button onclick="setPen('red')" class="w-5 h-5 bg-red-600 rounded-full border"></button>
-                            <button onclick="setPen('blue')" class="w-5 h-5 bg-blue-600 rounded-full border"></button>
+                    <div class="flex gap-1 items-center">
+                        <div class="flex border-r border-gray-300 pr-2 mr-1 gap-1">
+                            <button onclick="setPen('black')" class="w-6 h-6 bg-black rounded-full border-2 border-white shadow-sm" title="Noir"></button>
+                            <button onclick="setPen('#8b0000')" class="w-6 h-6 bg-red-800 rounded-full border-2 border-white shadow-sm" title="Rouge"></button>
+                            <button onclick="setPen('#1e3a8a')" class="w-6 h-6 bg-blue-800 rounded-full border-2 border-white shadow-sm" title="Bleu"></button>
                         </div>
-                        <button onclick="setTool('eraser')" class="px-2 bg-gray-200 rounded text-xs"><i class="fas fa-eraser"></i></button>
-                        <button onclick="setTool('text')" class="px-2 bg-gray-200 rounded text-xs"><i class="fas fa-font"></i></button>
+                        <button onclick="setTool('pen')" id="btn-pen" class="px-2 py-1 bg-gray-200 rounded text-sm border border-gray-300"><i class="fas fa-pencil-alt"></i></button>
+                        <button onclick="setTool('eraser')" id="btn-eraser" class="px-2 py-1 bg-gray-200 rounded text-sm border border-gray-300"><i class="fas fa-eraser"></i></button>
+                        <button onclick="setTool('text')" id="btn-text" class="px-2 py-1 bg-gray-200 rounded text-sm border border-gray-300"><i class="fas fa-font"></i></button>
                     </div>
                 </div>
+                
                 <div id="mapContainer">
                     <div class="compass"></div>
                     <canvas id="drawingCanvas" width="2000" height="2000"></canvas>
+                </div>
+
+                <div class="map-controls">
+                    <button class="map-btn" onclick="panMap(0, 50)" style="grid-column: 2">⬆️</button>
+                    <button class="map-btn" onclick="panMap(50, 0)" style="grid-column: 1; grid-row: 2">⬅️</button>
+                    <button class="map-btn font-bold text-sm" onclick="changeZoom(-0.1)" style="grid-column: 2; grid-row: 2">🔍-</button>
+                    <button class="map-btn" onclick="panMap(-50, 0)" style="grid-column: 3; grid-row: 2">➡️</button>
+                    <button class="map-btn" onclick="panMap(0, -50)" style="grid-column: 2; grid-row: 3">⬇️</button>
+                    
+                    <button class="map-btn font-bold text-sm" onclick="changeZoom(0.1)" style="grid-column: 4; grid-row: 1/span 3; display: flex; align-items: center; justify-content: center;">🔍+</button>
+                    <div class="text-[10px] text-white flex items-center justify-center font-sans" style="grid-column: 5; grid-row: 1/span 3; text-align:center;">Zoom<br><span id="zoomDisplay">100%</span></div>
                 </div>
             </div>
 
             <div id="tab-journal" class="tab-content hidden space-y-3">
                 <div class="card p-3">
-                    <h3 class="font-bold text-sm mb-2">Bloc-Notes Personnel</h3>
-                    <textarea id="persistentNotes" class="w-full text-sm border p-2 h-32 rounded mb-2 bg-yellow-50" placeholder="Vos notes sont sauvegardées ici..." onchange="saveNotes()"></textarea>
+                    <h3 class="font-bold text-sm mb-2"><i class="fas fa-feather-alt"></i> NOTES PERSONNELLES</h3>
+                    <textarea id="persistentNotes" class="w-full text-sm border p-2 h-40 rounded mb-2 bg-[#fffdf5] font-serif" placeholder="Notez ici vos indices, codes et réflexions..." onchange="saveNotes()"></textarea>
                     <div class="flex gap-2">
-                        <input id="quickNote" class="flex-1 text-xs border p-1" placeholder="Note rapide pour l'historique...">
-                        <button onclick="addLogNote()" class="bg-gray-200 text-xs px-2 border">Ajouter au Log</button>
+                        <input id="quickNote" class="flex-1 text-xs border p-1 rounded font-serif" placeholder="Note rapide pour l'historique...">
+                        <button onclick="addLogNote()" class="bg-gray-200 text-xs px-2 border rounded font-bold">AJOUTER AU LOG</button>
                     </div>
                 </div>
 
                 <div class="card p-3">
-                    <h3 class="font-bold text-sm mb-2">Historique Complet</h3>
-                    <div id="historyLog" class="h-64 overflow-y-auto text-[11px] font-mono bg-white p-2 border mt-2 rounded leading-tight"></div>
+                    <h3 class="font-bold text-sm mb-2"><i class="fas fa-history"></i> CHRONIQUE</h3>
+                    <div id="historyLog" class="h-64 overflow-y-auto text-sm font-serif bg-[#fffdf5] p-2 border border-gray-300 mt-2 rounded leading-snug text-gray-800"></div>
                 </div>
                 
                 <div class="card p-3">
-                    <h3 class="font-bold text-sm mb-2">Checkpoints (Max 3)</h3>
+                    <h3 class="font-bold text-sm mb-2"><i class="fas fa-save"></i> CHECKPOINTS (Max 3)</h3>
                     <div id="cpList" class="space-y-1"></div>
                 </div>
 
-                <button onclick="downloadSave()" class="w-full py-3 bg-gray-800 text-white font-bold rounded mb-4"><i class="fas fa-download"></i> SAUVEGARDER (FICHIER)</button>
+                <button onclick="downloadSave()" class="w-full py-3 bg-[#2c1810] text-[#f3e5ab] font-bold rounded mb-4 border border-[#f3e5ab] shadow"><i class="fas fa-download"></i> TÉLÉCHARGER SAUVEGARDE (.JSON)</button>
             </div>
 
         </div>
@@ -356,9 +380,9 @@
     </div>
 
     <div id="modalDeath" class="modal">
-        <div class="bg-white p-6 rounded shadow-xl border-4 border-red-900 text-center max-w-sm w-full">
-            <h2 class="text-3xl font-bold text-red-900 mb-2 title-font">COMBAT PERDU</h2>
-            <div id="deathContent" class="space-y-4 mt-4 text-sm">
+        <div class="bg-[#fffdf5] p-6 rounded shadow-2xl border-4 border-red-900 text-center max-w-sm w-full relative">
+            <h2 class="text-4xl font-bold text-red-900 mb-4 title-font" style="text-shadow: 1px 1px 0 #000;">COMBAT PERDU</h2>
+            <div id="deathContent" class="space-y-4 mt-4 text-sm font-serif">
                 </div>
         </div>
     </div>
@@ -383,7 +407,7 @@
             {t:1, src:[340], name:"Clé rouillée", type:"none", val:0, uses:-1, desc:"Ouvre grille labyrinthe."},
             {t:1, src:[287], name:"Bracelet de force", type:"equip_dex", val:2, uses:-1, desc:"+2 Dex (Porté)."},
             {t:1, src:[334], name:"Bague de vitalité", type:"equip_pv", val:2, uses:-1, desc:"+2 PV Max/Actuels (Porté)."},
-            // TOME 2
+            // TOME 2 & 3 (Idem versions précédentes)
             {t:2, src:[3,6,124], name:"Champignon poils longs", type:"none", val:0, uses:1, desc:"Objet de quête."},
             {t:2, src:[24], name:"Lettre pliée", type:"none", val:0, uses:1, desc:"Message codé de Tess."},
             {t:2, src:[102], name:"Pomme verte", type:"heal", val:2, uses:1, desc:"+2 PV."},
@@ -395,7 +419,6 @@
             {t:2, src:[272], name:"Reçu cheval", type:"none", val:0, uses:1, desc:"Preuve de dépôt."},
             {t:2, src:[215], name:"Ceinture Paco Tille", type:"gold", val:5, uses:-1, desc:"Vaut 5 boulons."},
             {t:2, src:[50,130,142,183,300], name:"Champignon orange", type:"heal", val:1, uses:1, desc:"+1 PV."},
-            // TOME 3
             {t:3, src:[8], name:"Clé du coffre", type:"none", val:0, uses:-1, desc:"Nain Vil Requin."},
             {t:3, src:[219,232], name:"Gros Livre", type:"none", val:0, uses:-1, desc:"Déclenche dalles."},
             {t:3, src:[236,328], name:"Tige de métal", type:"none", val:0, uses:-1, desc:"Levier."},
@@ -507,7 +530,7 @@
             if(diff !== 0) { state.hero.gold = neo; log(`Boulons: ${diff>0?'+':''}${diff} (Total: ${neo})`); }
         }
 
-        // --- INVENTAIRE & CREATION PERSO ---
+        // --- INVENTAIRE ---
         function toggleUseInput(val) { document.getElementById('cUsesNbDiv').classList.toggle('hidden', val !== 'X'); }
         function addCustomItem() {
             const name = document.getElementById('cName').value;
@@ -590,32 +613,31 @@
             state.inventory.forEach(i => {
                 if(i.type === 'dmg') { const opt = document.createElement('option'); opt.value = i.val; opt.text = `${i.name} (+${i.val})`; ws.add(opt); }
                 const li = document.createElement('li');
-                li.className = "flex justify-between items-center bg-gray-50 p-2 rounded border";
+                li.className = "flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-300";
                 let btn = "";
                 if(i.type === 'heal' || (i.type === 'none' && i.uses > 0)) {
-                    btn = `<button onclick="useItem(${i.id})" class="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded mr-2 border border-green-200">UTILISER</button>`;
+                    btn = `<button onclick="useItem(${i.id})" class="text-[10px] bg-green-100 text-green-800 px-2 py-1 rounded mr-2 border border-green-200 uppercase font-bold">Utiliser</button>`;
                 } else if (i.type.startsWith('equip')) {
                     const txt = i.equipped ? "RETIRER" : "ÉQUIPER";
-                    const cls = i.equipped ? "bg-blue-600 text-white" : "bg-gray-200";
-                    btn = `<button onclick="toggleEquip(${i.id})" class="text-[10px] ${cls} px-2 py-1 rounded mr-2">${txt}</button>`;
+                    const cls = i.equipped ? "bg-blue-800 text-white" : "bg-gray-200 text-black";
+                    btn = `<button onclick="toggleEquip(${i.id})" class="text-[10px] ${cls} px-2 py-1 rounded mr-2 uppercase font-bold border border-gray-400">${txt}</button>`;
                 }
                 const usesTxt = i.uses > 0 ? `(x${i.uses})` : (i.uses===-1?"(∞)":"");
                 li.innerHTML = `
-                    <div class="flex-1 ${i.equipped?'font-bold text-blue-800':''}">
-                        <div>${i.name} <span class="text-xs text-gray-500">${usesTxt}</span></div>
-                        <div class="text-[10px] text-gray-400 italic">${i.desc}</div>
+                    <div class="flex-1 ${i.equipped?'font-bold text-blue-900':''}">
+                        <div class="font-serif text-lg">${i.name} <span class="text-xs text-gray-500 font-sans">${usesTxt}</span></div>
+                        <div class="text-[11px] text-gray-500 italic">${i.desc}</div>
                     </div>
-                    <div class="flex items-center">${btn}<i onclick="trashItem(${i.id})" class="fas fa-trash text-red-300 cursor-pointer ml-1"></i></div>
+                    <div class="flex items-center">${btn}<i onclick="trashItem(${i.id})" class="fas fa-trash text-red-300 hover:text-red-600 cursor-pointer ml-1"></i></div>
                 `;
                 l.appendChild(li);
             });
         }
 
-        // --- CHECKPOINTS INTELLIGENTS ---
+        // --- CHECKPOINTS & SAVE ---
         function createCheckpoint() {
             const currentCPs = state.checkpoints || []; 
-            if(currentCPs.length >= 3) currentCPs.shift(); // FIFO
-            
+            if(currentCPs.length >= 3) currentCPs.shift(); 
             const snapshot = JSON.stringify(state);
             currentCPs.push({ date: new Date().toLocaleTimeString(), chap: state.chapter, data: snapshot });
             state.checkpoints = currentCPs; 
@@ -642,17 +664,20 @@
         function renderCPList() {
             const d = document.getElementById('cpList'); d.innerHTML = "";
             (state.checkpoints || []).forEach((cp, i) => {
-                d.innerHTML += `<div class="flex justify-between bg-gray-50 p-1 border text-xs"><span>Chap ${cp.chap} (${cp.date})</span> <button onclick="loadCP(${i})" class="text-blue-600 font-bold">CHARGER</button></div>`;
+                d.innerHTML += `<div class="flex justify-between bg-gray-100 p-2 border border-gray-300 rounded text-xs font-sans">
+                    <span class="font-bold">Chap ${cp.chap} <span class="font-normal text-gray-500">(${cp.date})</span></span> 
+                    <button onclick="loadCP(${i})" class="text-blue-800 font-bold hover:underline">CHARGER</button>
+                </div>`;
             });
         }
 
-        // --- LOGIQUE JEU ---
+        // --- LOGIQUE JEU & DÉS ---
         let diceRes=0;
         function rollDiceVisual(n) {
             let tot=0; const con=document.getElementById('diceVisual'); con.innerHTML="";
             for(let i=0; i<n; i++) {
                 let r=Math.floor(Math.random()*6)+1; tot+=r;
-                con.innerHTML+=`<div class="w-8 h-8 bg-white border flex items-center justify-center font-bold shadow rounded">${r}</div>`;
+                con.innerHTML+=`<div class="w-8 h-8 bg-white border-2 border-gray-800 flex items-center justify-center font-bold shadow-md rounded text-lg font-serif">${r}</div>`;
             }
             diceRes=tot; document.getElementById('diceTotal').innerText="Total: "+tot;
             log(`Dés (${n}d6): Résultat ${tot}`);
@@ -676,32 +701,32 @@
             if(ePV <= 0) return;
 
             const rollH = Math.floor(Math.random()*6)+1 + Math.floor(Math.random()*6)+1;
-            let msg = `<div class="mb-1"><strong>Héros:</strong> `;
+            let msg = `<div class="mb-2 pb-1 border-b border-gray-200"><strong>Tour Héros:</strong> `;
             if(rollH <= state.hero.dex) {
                 const dmg = 1 + Math.floor(Math.random()*6)+1 + bonus; ePV -= dmg; 
-                msg += `<span class="text-green-700">Touche</span> (${rollH}) -> -${dmg} PV</div>`;
+                msg += `<span class="text-green-700 font-bold">TOUCHE</span> (${rollH}) -> <span class="bg-red-100 px-1 rounded">-${dmg} PV</span></div>`;
                 log(`Combat: Touché ${eName} pour ${dmg} dégâts.`);
             } else { 
-                msg += `<span class="text-red-400">Rate</span> (${rollH})</div>`; 
+                msg += `<span class="text-red-400 font-bold">RATE</span> (${rollH})</div>`; 
                 log(`Combat: Raté ${eName}.`);
             }
 
             if(ePV > 0) {
                 const rollE = Math.floor(Math.random()*6)+1 + Math.floor(Math.random()*6)+1;
-                msg += `<div class="mb-1"><strong>${eName}:</strong> `;
+                msg += `<div class="mb-2"><strong>${eName}:</strong> `;
                 if(rollE <= eDex) {
                     const dmgE = Math.floor(Math.random()*6)+1; state.hero.pv -= dmgE; if(state.hero.pv<0) state.hero.pv=0;
-                    msg += `<span class="text-red-700">Touche</span> -> -${dmgE} PV</div>`;
+                    msg += `<span class="text-red-700 font-bold">TOUCHE</span> -> <span class="bg-red-200 px-1 rounded font-bold">-${dmgE} PV</span></div>`;
                     log(`Combat: ${eName} vous touche (-${dmgE} PV).`); checkDeath();
                 } else { 
-                    msg += `<span class="text-blue-400">Rate</span></div>`; 
+                    msg += `<span class="text-blue-400 font-bold">RATE</span></div>`; 
                     log(`Combat: ${eName} vous rate.`);
                 }
             } else { 
-                msg += `<div class="text-green-800 font-bold">VICTOIRE !</div>`; ePV=0; 
+                msg += `<div class="text-green-800 font-bold text-center mt-2 p-1 bg-green-100 rounded border border-green-300">🏆 VICTOIRE !</div>`; ePV=0; 
                 log(`Combat: Victoire contre ${eName} !`);
             }
-            msg += `<hr>`; logDiv.innerHTML = msg + logDiv.innerHTML;
+            logDiv.innerHTML = msg + logDiv.innerHTML;
             document.getElementById('enemyPV').value = ePV; updateUI();
         }
         function resetCombat() { document.getElementById('combatLog').innerHTML=""; document.getElementById('enemyPV').value=""; }
@@ -714,25 +739,27 @@
                 m.style.display = 'flex';
                 
                 let html = `
-                    <div class="bg-yellow-50 p-2 border border-yellow-300 rounded mb-4">
-                        <label class="block font-bold text-gray-700 mb-1">Le livre indique une suite ?</label>
+                    <div class="bg-red-50 p-3 border border-red-300 rounded mb-4 text-left">
+                        <label class="block font-bold text-red-900 mb-1">Le livre indique une suite ?</label>
                         <div class="flex gap-2">
-                            <input id="defeatChapInput" type="number" placeholder="Chap..." class="border p-1 text-sm w-20 rounded">
-                            <button onclick="goToDefeatChapter()" class="bg-yellow-600 text-white px-3 py-1 rounded font-bold hover:bg-yellow-700">S'y rendre</button>
+                            <input id="defeatChapInput" type="number" placeholder="N°" class="border p-1 text-lg w-20 rounded text-center font-bold">
+                            <button onclick="goToDefeatChapter()" class="bg-red-700 text-[#f3e5ab] px-4 py-1 rounded font-bold hover:bg-red-800 shadow">S'Y RENDRE</button>
                         </div>
-                        <p class="text-[10px] text-gray-500 mt-1 italic">Note: Vous relève avec 1 PV.</p>
+                        <p class="text-xs text-red-500 mt-1 italic">Note: Vous relève avec 1 PV.</p>
                     </div>
                 `;
 
                 if(state.mode==='Simplifié' && state.checkpoints.length>0) {
-                    html += `<div class="text-left"><p class="font-bold mb-1">Ou charger un checkpoint :</p>`;
+                    html += `<div class="text-left mt-4"><p class="font-bold mb-2">Ou charger un checkpoint :</p>`;
                     state.checkpoints.forEach((cp, idx) => {
-                        html += `<button onclick="loadCP(${idx})" class="block w-full bg-blue-100 p-2 mt-1 rounded text-left text-xs hover:bg-blue-200">Chap ${cp.chap} (${cp.date})</button>`;
+                        html += `<button onclick="loadCP(${idx})" class="block w-full bg-blue-100 p-3 mt-1 rounded text-left text-sm hover:bg-blue-200 border border-blue-200 shadow-sm font-sans">
+                            <i class="fas fa-undo"></i> Chap ${cp.chap} (${cp.date})
+                        </button>`;
                     });
                     html += `</div>`;
                 }
                 
-                html += `<hr class="my-4"><button onclick="location.reload()" class="bg-gray-800 text-white p-2 rounded w-full">Recommencer l'aventure</button>`;
+                html += `<hr class="my-6 border-red-200"><button onclick="location.reload()" class="bg-gray-800 text-white p-3 rounded w-full font-bold shadow-lg">RECOMMENCER L'AVENTURE</button>`;
                 
                 c.innerHTML = html;
             }
@@ -749,7 +776,71 @@
             }
         }
 
-        // --- UTILS & UI ---
+        // --- CARTE & UTILS ---
+        let canvas, ctx, isDr=false, cColor="black", cTool="pen", zoomLevel=1;
+        
+        function initMap() {
+            canvas = document.getElementById('drawingCanvas'); ctx = canvas.getContext('2d');
+            canvas.addEventListener('mousedown', start); canvas.addEventListener('touchstart', start);
+            canvas.addEventListener('mousemove', draw); canvas.addEventListener('touchmove', draw);
+            canvas.addEventListener('mouseup', stop); canvas.addEventListener('touchend', stop);
+            loadMapImg();
+        }
+
+        function start(e) { 
+            if(cTool === 'text') { 
+                const p = pos(e); 
+                const t = prompt("Texte de l'annotation :"); 
+                if(t) { ctx.font="16px EB Garamond"; ctx.fillStyle=cColor; ctx.fillText(t,p.x,p.y); state.maps[state.currentMap]=canvas.toDataURL(); } 
+                return; 
+            }
+            isDr = true; ctx.beginPath(); const p = pos(e); ctx.moveTo(p.x, p.y);
+        }
+        function draw(e) { 
+            if(!isDr) return; e.preventDefault(); const p = pos(e); 
+            ctx.lineWidth = cTool==='eraser'?20:2; 
+            ctx.globalCompositeOperation = cTool==='eraser'?'destination-out':'source-over'; 
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = cColor; ctx.lineTo(p.x, p.y); ctx.stroke(); 
+        }
+        function stop() { if(isDr){isDr=false; state.maps[state.currentMap]=canvas.toDataURL();} }
+        
+        function pos(e) { 
+            const r = canvas.getBoundingClientRect(); 
+            const x = (e.clientX || e.touches[0].clientX) - r.left;
+            const y = (e.clientY || e.touches[0].clientY) - r.top;
+            // Correction coordonnées si zoom CSS (Optionnel si on zoom le container, ici on zoom le container via CSS non)
+            // Ici le zoom est géré par style.transform
+            return { x: x / zoomLevel, y: y / zoomLevel }; 
+        }
+
+        function setPen(c) { cColor=c; cTool='pen'; document.querySelectorAll('#tab-carte button').forEach(b=>b.classList.remove('ring-2')); } 
+        function setTool(t) { 
+            cTool=t; 
+            // Visual feedback
+            ['btn-pen','btn-eraser','btn-text'].forEach(id => document.getElementById(id).classList.remove('bg-gray-400'));
+            document.getElementById('btn-'+t).classList.add('bg-gray-400');
+        }
+
+        // --- MAP CONTROLS ---
+        function addMap() { const n=prompt("Nom du nouveau plan:"); if(n) { state.maps[state.currentMap]=canvas.toDataURL(); state.maps[n]=""; state.currentMap=n; ctx.clearRect(0,0,2000,2000); updateMapSel(); } }
+        function changeMap(n) { state.maps[state.currentMap]=canvas.toDataURL(); state.currentMap=n; ctx.clearRect(0,0,2000,2000); loadMapImg(); }
+        function updateMapSel() { const s=document.getElementById('mapSelector'); s.innerHTML=""; Object.keys(state.maps).forEach(k=>{const o=document.createElement('option'); o.text=k; s.add(o);}); s.value=state.currentMap; }
+        function loadMapImg() { const d=state.maps[state.currentMap]; if(d) { const i=new Image(); i.onload=()=>ctx.drawImage(i,0,0); i.src=d; } else ctx.clearRect(0,0,2000,2000); }
+
+        function panMap(dx, dy) {
+            const c = document.getElementById('mapContainer');
+            c.scrollBy({left: dx, top: dy, behavior: 'smooth'});
+        }
+        function changeZoom(delta) {
+            zoomLevel += delta;
+            if(zoomLevel < 0.5) zoomLevel = 0.5;
+            if(zoomLevel > 3) zoomLevel = 3;
+            document.getElementById('drawingCanvas').style.transform = `scale(${zoomLevel})`;
+            document.getElementById('zoomDisplay').innerText = Math.round(zoomLevel*100) + "%";
+        }
+
+        // --- SAVE/LOAD ---
         function saveNotes() { state.notes = document.getElementById('persistentNotes').value; }
         function addLogNote() { const t = document.getElementById('quickNote').value; if(t) { log(`NOTE: ${t}`); document.getElementById('quickNote').value=""; } }
         function downloadSave() { state.maps[state.currentMap] = canvas.toDataURL(); const blob = new Blob([JSON.stringify(state)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `save_${state.hero.name}.json`; a.click(); }
@@ -764,24 +855,6 @@
             };
             r.readAsText(f);
         }
-
-        let canvas, ctx, isDr=false, cColor="black", cTool="pen";
-        function initMap() {
-            canvas = document.getElementById('drawingCanvas'); ctx = canvas.getContext('2d');
-            canvas.addEventListener('mousedown', start); canvas.addEventListener('touchstart', start);
-            canvas.addEventListener('mousemove', draw); canvas.addEventListener('touchmove', draw);
-            canvas.addEventListener('mouseup', stop); canvas.addEventListener('touchend', stop);
-            loadMapImg();
-        }
-        function start(e) { if(cTool === 'text') { const p = pos(e); const t = prompt("Texte:"); if(t) { ctx.font="14px Arial"; ctx.fillStyle=cColor; ctx.fillText(t,p.x,p.y); } return; } isDr = true; ctx.beginPath(); const p = pos(e); ctx.moveTo(p.x, p.y); }
-        function draw(e) { if(!isDr) return; e.preventDefault(); const p = pos(e); ctx.lineWidth = cTool==='eraser'?20:2; ctx.globalCompositeOperation = cTool==='eraser'?'destination-out':'source-over'; ctx.strokeStyle = cColor; ctx.lineTo(p.x, p.y); ctx.stroke(); }
-        function stop() { if(isDr){isDr=false; state.maps[state.currentMap]=canvas.toDataURL();} }
-        function pos(e) { const r=canvas.getBoundingClientRect(); const x=e.clientX||e.touches[0].clientX; const y=e.clientY||e.touches[0].clientY; return {x:x-r.left, y:y-r.top}; }
-        function setPen(c) { cColor=c; cTool='pen'; } function setTool(t) { cTool=t; }
-        function addMap() { const n=prompt("Nom:"); if(n) { state.maps[state.currentMap]=canvas.toDataURL(); state.maps[n]=""; state.currentMap=n; ctx.clearRect(0,0,2000,2000); updateMapSel(); } }
-        function changeMap(n) { state.maps[state.currentMap]=canvas.toDataURL(); state.currentMap=n; ctx.clearRect(0,0,2000,2000); loadMapImg(); }
-        function updateMapSel() { const s=document.getElementById('mapSelector'); s.innerHTML=""; Object.keys(state.maps).forEach(k=>{const o=document.createElement('option'); o.text=k; s.add(o);}); s.value=state.currentMap; }
-        function loadMapImg() { const d=state.maps[state.currentMap]; if(d) { const i=new Image(); i.onload=()=>ctx.drawImage(i,0,0); i.src=d; } else ctx.clearRect(0,0,2000,2000); }
 
         function updateUI() {
             const h = state.hero;
