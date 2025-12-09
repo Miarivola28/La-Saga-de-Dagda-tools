@@ -10,7 +10,6 @@
     
     <style>
         /* --- THEMES --- */
-        /* Correction T1 : Fond bleu pale virant au blanc */
         :root { --primary: #2c1810; --bg: #f3e5ab; --accent: #8b0000; --border: #8b4513; --text: #1a0f0a; }
         body.theme-t1 { --bg: #eff6ff; --primary: #1e3a8a; } /* Bleu très pâle */
         body.theme-t2 { --bg: #f0fdf4; --primary: #14532d; } /* Vert pâle */
@@ -46,7 +45,7 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.6); transition: background 0.5s;
         }
         .saga-title {
-            text-align: center; font-size: 1.1rem; /* TAILLE ORIGINALE */
+            text-align: center; font-size: 1.1rem; 
             color: #FFD700; /* OR */
             text-shadow: 1px 1px 0 #000;
             letter-spacing: 1px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
@@ -320,7 +319,13 @@
                     <div class="mb-3">
                          <select id="combatWeapon" class="w-full text-sm border p-1 rounded bg-white"></select>
                     </div>
-                    <button onclick="combatRound()" class="w-full bg-red-800 text-[#f3e5ab] py-3 rounded font-bold shadow-md border border-black hover:bg-red-900 text-lg">⚔️ COMBATTRE</button>
+                    
+                    <div class="flex gap-2 mb-2">
+                        <button onclick="combatPlayerTurn()" class="flex-1 bg-blue-800 text-white py-2 rounded font-bold shadow border border-black hover:bg-blue-900 text-sm" title="J'attaque seulement">⚔️ MOI</button>
+                        <button onclick="combatRound()" class="flex-1 bg-red-800 text-[#f3e5ab] py-2 rounded font-bold shadow border border-black hover:bg-red-900 text-sm" title="Tour Complet (Moi puis Ennemi)">⚔️⚡🛡️ AUTO</button>
+                        <button onclick="combatEnemyTurn()" class="flex-1 bg-gray-700 text-white py-2 rounded font-bold shadow border border-black hover:bg-gray-800 text-sm" title="L'ennemi attaque seulement">🛡️ ENNEMI</button>
+                    </div>
+
                     <div id="combatLog" class="h-32 overflow-y-auto bg-white p-2 text-sm border border-gray-300 rounded mt-2 font-serif leading-tight"></div>
                 </div>
 
@@ -659,7 +664,84 @@
         function renderCPList() { const d=document.getElementById('cpList'); d.innerHTML=""; state.checkpoints.forEach((cp,i)=>{d.innerHTML+=`<div class="flex justify-between bg-gray-100 p-2 border border-gray-300 rounded text-xs font-sans"><span class="font-bold">Chap ${cp.chap} <span class="font-normal text-gray-500">(${cp.date})</span></span><button onclick="loadCP(${i})" class="text-blue-800 font-bold hover:underline">CHARGER</button></div>`;}); }
         function rollDiceVisual(n) { let t=0; const c=document.getElementById('diceVisual'); c.innerHTML=""; for(let i=0;i<n;i++){let r=Math.floor(Math.random()*6)+1;t+=r;c.innerHTML+=`<div class="w-8 h-8 bg-white border-2 border-gray-800 flex items-center justify-center font-bold shadow-md rounded text-lg font-serif">${r}</div>`;} document.getElementById('diceTotal').innerText="Total: "+t; }
         function useLuck(m) { if(state.hero.chance>0){state.hero.chance--; updateUI();} }
-        function combatRound() { const log=document.getElementById('combatLog'); const en=document.getElementById('enemyName').value||"Ennemi"; let ep=parseInt(document.getElementById('enemyPV').value)||0; const ed=parseInt(document.getElementById('enemyDex').value)||7; if(ep<=0)return; const rh=Math.floor(Math.random()*12)+2; let msg=`<div class="mb-2 pb-1 border-b border-gray-200"><strong>Tour Héros:</strong> `; if(rh<=state.hero.dex){const dmg=Math.floor(Math.random()*6)+2+parseInt(document.getElementById('combatWeapon').value); ep-=dmg; msg+=`<span class="text-green-700 font-bold">TOUCHE</span> (${rh}) -> <span class="bg-red-100 px-1 rounded">-${dmg} PV</span></div>`; log(`Combat: Touché ${en} pour ${dmg} dégâts.`);}else{msg+=`<span class="text-red-400 font-bold">RATE</span> (${rh})</div>`; log(`Combat: Raté ${en}.`);} if(ep>0){const re=Math.floor(Math.random()*12)+2; msg+=`<div class="mb-2"><strong>${en}:</strong> `; if(re<=ed){const de=Math.floor(Math.random()*6)+1; state.hero.pv-=de; msg+=`<span class="text-red-700 font-bold">TOUCHE</span> -> <span class="bg-red-200 px-1 rounded font-bold">-${de} PV</span></div>`; log(`Combat: ${en} vous touche (-${de} PV).`); checkDeath();}else{msg+=`<span class="text-blue-400 font-bold">RATE</span></div>`; log(`Combat: ${en} vous rate.`);}}else{msg+=`<div class="text-green-800 font-bold text-center mt-2 p-1 bg-green-100 rounded border border-green-300">🏆 VICTOIRE !</div>`; ep=0; log(`Combat: Victoire contre ${en} !`);} log.innerHTML=msg+log.innerHTML; document.getElementById('enemyPV').value=ep; updateUI(); }
+        
+        // --- SYSTEME DE COMBAT CORRIGE ---
+        function combatPlayerTurn() {
+            const logEl = document.getElementById('combatLog');
+            const eName = document.getElementById('enemyName').value || "Ennemi";
+            let ePV = parseInt(document.getElementById('enemyPV').value) || 0;
+            
+            if (ePV <= 0) {
+                // Feedback si l'utilisateur a oublié les PV
+                logEl.innerHTML = `<div class="text-red-600 font-bold mb-1 text-center bg-red-100 p-1 rounded">⚠️ PV Ennemi ?</div>` + logEl.innerHTML;
+                return 0;
+            }
+
+            // Mécanique V6 (2d6)
+            const rollH = Math.floor(Math.random()*6)+1 + Math.floor(Math.random()*6)+1;
+            let msg = `<div class="mb-2 pb-1 border-b border-gray-200"><strong>⚔️ MOI :</strong> `;
+            
+            if (rollH <= state.hero.dex) {
+                const bonus = parseInt(document.getElementById('combatWeapon').value) || 0;
+                // Dégats: 1 base + 1d6 + bonus
+                const dmg = 1 + Math.floor(Math.random()*6)+1 + bonus;
+                ePV -= dmg;
+                msg += `<span class="text-green-700 font-bold">TOUCHE</span> (${rollH}) -> <span class="bg-red-100 px-1 rounded text-red-800">-${dmg} PV</span></div>`;
+                log(`Combat: Touché ${eName} (${dmg} dmg).`);
+            } else {
+                msg += `<span class="text-red-400 font-bold">RATE</span> (${rollH})</div>`;
+                log(`Combat: Raté ${eName}.`);
+            }
+
+            if (ePV <= 0) {
+                ePV = 0;
+                msg += `<div class="text-green-800 font-bold text-center mt-2 p-1 bg-green-100 rounded border border-green-300">🏆 VICTOIRE !</div>`;
+                log(`Combat: Victoire contre ${eName} !`);
+            }
+
+            logEl.innerHTML = msg + logEl.innerHTML;
+            document.getElementById('enemyPV').value = ePV;
+            updateUI();
+            return ePV;
+        }
+
+        function combatEnemyTurn() {
+            const logEl = document.getElementById('combatLog');
+            const eName = document.getElementById('enemyName').value || "Ennemi";
+            let ePV = parseInt(document.getElementById('enemyPV').value) || 0;
+            const eDex = parseInt(document.getElementById('enemyDex').value) || 7;
+
+            // Si PV ennemi à 0 ou vide, il ne peut pas attaquer
+            if (ePV <= 0) return; 
+
+            // Mécanique V6 (2d6 pour l'ennemi)
+            const rollE = Math.floor(Math.random()*6)+1 + Math.floor(Math.random()*6)+1;
+            let msg = `<div class="mb-2"><strong>🛡️ ${eName} :</strong> `;
+
+            if (rollE <= eDex) {
+                const dmgE = Math.floor(Math.random()*6)+1;
+                state.hero.pv -= dmgE;
+                msg += `<span class="text-red-700 font-bold">TOUCHE</span> -> <span class="bg-red-200 px-1 rounded text-red-900 font-bold">-${dmgE} PV</span></div>`;
+                log(`Combat: ${eName} touche (-${dmgE} PV).`);
+                checkDeath();
+            } else {
+                msg += `<span class="text-blue-400 font-bold">RATE</span></div>`;
+                log(`Combat: ${eName} rate.`);
+            }
+
+            logEl.innerHTML = msg + logEl.innerHTML;
+            updateUI();
+        }
+
+        function combatRound() {
+            const hpLeft = combatPlayerTurn();
+            // L'ennemi riposte seulement s'il est encore vivant
+            if (hpLeft > 0) {
+                // Petit délai esthétique pour séparer les actions
+                setTimeout(combatEnemyTurn, 200); 
+            }
+        }
+
         function resetCombat() { document.getElementById('combatLog').innerHTML=""; document.getElementById('enemyPV').value=""; }
         function checkDeath() { if(state.hero.pv<=0){document.getElementById('modalDeath').style.display='flex'; let h=`<div class="bg-red-50 p-3 border border-red-300 rounded mb-4 text-left"><label class="block font-bold text-red-900 mb-1">Le livre indique une suite ?</label><div class="flex gap-2"><input id="defeatChapInput" type="number" placeholder="N°" class="border p-1 text-lg w-20 rounded text-center font-bold"><button onclick="goToDefeatChapter()" class="bg-red-700 text-[#f3e5ab] px-4 py-1 rounded font-bold hover:bg-red-800 shadow">S'Y RENDRE</button></div><p class="text-xs text-red-500 mt-1 italic">Note: Vous relève avec 1 PV.</p></div>`; if(state.mode==='Simplifié' && state.checkpoints.length>0){html+=`<div class="text-left mt-4"><p class="font-bold mb-2">Ou charger un checkpoint :</p>`; state.checkpoints.forEach((cp,idx)=>{html+=`<button onclick="loadCP(${idx})" class="block w-full bg-blue-100 p-3 mt-1 rounded text-left text-sm hover:bg-blue-200 border border-blue-200 shadow-sm font-sans"><i class="fas fa-undo"></i> Chap ${cp.chap} (${cp.date})</button>`;}); html+=`</div>`;} html+=`<hr class="my-6 border-red-200"><button onclick="location.reload()" class="bg-gray-800 text-white p-3 rounded w-full font-bold shadow-lg">RECOMMENCER L'AVENTURE</button>`; document.getElementById('deathContent').innerHTML=h;} }
         function goToDefeatChapter() { const val=document.getElementById('defeatChapInput').value; if(val){state.hero.pv=1; goToChapter(val); document.getElementById('modalDeath').style.display='none'; log(`Suite défaite -> Chapitre ${val} (Relèvement 1 PV)`); updateUI();} }
